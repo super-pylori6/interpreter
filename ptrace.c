@@ -502,7 +502,10 @@ obj* prim_define(obj* env, obj* list){
     return Nil;
   }
   
-  //printf("%c\n", list->car->symbol[0]);
+  if(list->car->symbol[0] != '$'){
+    perror("[prim_define] initial of variable takes only $");
+    return Nil;
+  };
   
   obj* sym = list->car;
   obj* value = eval(env, list->cdr->car);
