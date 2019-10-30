@@ -59,6 +59,9 @@ typedef struct obj {
   };
 } obj;
 
+obj* True = &(obj){TRUE};
+obj* Nil = &(obj){NIL};
+
 obj *symbol_table;
 
 pid_t pid;
@@ -161,7 +164,7 @@ int peek(void) {
 
 // リストを反転する
 obj* reverse(obj* o){
-  obj* ret = make_nil();
+  obj* ret = Nil;
   while(o->type != NIL){
     obj* head = o;
     o = o->cdr;
@@ -175,7 +178,7 @@ obj* reverse(obj* o){
 // 入力に左括弧が見つかると呼ばれる
 // 右括弧が見つかると終了
 obj* read_list(void){
-  obj* head = make_nil();
+  obj* head = Nil;
   for(;;){
     obj* tmp = read();
     if(!tmp || tmp->type == NIL){
@@ -334,11 +337,11 @@ obj* lookup(obj* env, obj* sym){
       }
     }
   }
-  return make_nil();
+  return Nil;
 }
 
 obj* progn(obj *env, obj *list) {
-  obj* r = make_nil();
+  obj* r = Nil;
   for (obj* lp = list; lp->type != NIL; lp = lp->cdr) {
     r = lp->car;
     r = eval(env, r);
@@ -350,9 +353,9 @@ obj* eval_list(obj* env, obj* list){
   if(list->type != LIST){
     return eval(env, list);
   }
-  obj* head = make_nil();
-  obj* o = make_nil();
-  obj* result = make_nil();  
+  obj* head = Nil;
+  obj* o = Nil;
+  obj* result = Nil;  
   for(obj* lp = list; lp->type != NIL; lp = lp->cdr){
     o = lp->car;
     result = eval(env, o);
@@ -382,7 +385,7 @@ obj* eval(obj* env, obj* o){
     obj* list_sym = lookup(env, o);
     if(list_sym->type == NIL){
       perror("[eval] no symbol");
-      return make_nil();
+      return Nil;
     }
     else if(list_sym->cdr->type == GVAR){
       return get_gvar(list_sym->cdr);
@@ -396,13 +399,13 @@ obj* eval(obj* env, obj* o){
     obj* args = o->cdr;
     if(fn->type != PRIM && fn->type != FUNC){
       perror("[eval] fn->type error");
-      return make_nil();
+      return Nil;
     }
     return apply(env, fn, args);
   }
   default:
     perror("[eval] obj->type error");
-    return make_nil();
+    return Nil;
   }
 }
 
@@ -496,7 +499,11 @@ obj* prim_add(obj* env, obj* list){
 obj* prim_define(obj* env, obj* list){
   if (length(list) != 2 || list->car->type != SYM){
     perror("[prim_define] Malformed define");
+    return Nil;
   }
+  
+  //printf("%c\n", list->car->symbol[0]);
+  
   obj* sym = list->car;
   obj* value = eval(env, list->cdr->car);
   add_variable(env, sym, value);
@@ -510,7 +517,7 @@ obj* get_member_direct(obj* stru, obj* memb){
   int i = search_memb(memb->symbol, typenum);
   if(i<0){
     perror("[get_member_direct] no member");
-    return make_nil();
+    return Nil;
   }
 
   int membtypenum = types[typenum].mem[i].typenum;
@@ -532,18 +539,18 @@ obj* prim_member_direct(obj* env, obj* list){
   
   if(!stru){
     perror("[prim_member_direct] no obj");
-    return make_nil();
+    return Nil;
   }
   
   if(stru->type != GVAR){
     perror("[prim_member_direct] not gvar");
-    return make_nil();
+    return Nil;
   }
 
   int typenum = stru->typenum;
   if(types[typenum].kind != structure){
     perror("[prim_member_direct] not struct");
-    return make_nil();
+    return Nil;
   }
   
   return get_member_direct(stru, list->cdr->car);
@@ -555,18 +562,18 @@ obj* prim_member_indirect(obj* env, obj* list){
   
   if(!stru){
     perror("[prim_member_direct] no obj");
-    return make_nil();
+    return Nil;
   }
 
   if(stru->type != GVAR){
     perror("[prim_member_direct] not gvar");
-    return make_nil();
+    return Nil;
   }
   
   int typenum = stru->typenum;
   if(types[typenum].kind != pointer || types[types[typenum].saki].kind != structure){
     perror("[prim_member_direct] not struct pointer");
-    return make_nil();
+    return Nil;
   }
 
   return get_member_indirect(stru, list->cdr->car);
@@ -578,13 +585,13 @@ obj* prim_printp(obj* env, obj* list){
 
   if(!o){
     perror("[prim_printp] no pointer var");
-    return make_nil();
+    return Nil;
   }
 
   int typenum = o->typenum;
   if(types[typenum].kind != pointer){
     perror("[prim_printp] not pointer");
-    return make_nil();
+    return Nil;
   }
   
   int i, j;
@@ -605,14 +612,14 @@ obj* prim_printp(obj* env, obj* list){
 	if(str[i+j] == '\0'){
 	  printf("%s\n", str);
 	  //return make_gvar(typenum, (long)str);
-	  return make_nil();
+	  return Nil;
 	}
       }
     } 
   }
   else{
     perror("[prim_printp] not defined");
-    return make_nil();
+    return Nil;
   }
 }
 
@@ -622,13 +629,13 @@ obj* prim_printa(obj* env, obj* list){
 
   if(!o){
     perror("[prim_printp] no pointer var");
-    return make_nil();
+    return Nil;
   }
 
   int typenum = o->typenum;
   if(types[typenum].kind != array){
     perror("[prim_printp] not pointer");
-    return make_nil();
+    return Nil;
   }
   
   int i;
@@ -644,11 +651,11 @@ obj* prim_printa(obj* env, obj* list){
     }
     printf("%s\n", str);
     //return make_gvar(typenum, (long)str);
-    return make_nil();
+    return Nil;
   }
   else{
     perror("[prim_printa] not defined");
-    return make_nil();
+    return Nil;
   }
 }
 
@@ -657,20 +664,21 @@ obj* prim_lt(obj *env, obj *list) {
   obj *args = eval_list(env, list);
   if(length(args) != 2){
     perror("[prim_lt] malformed <");
-    return make_nil();
+    return Nil;
   }
   obj *x = args->car;
   obj *y = args->cdr->car;
   if(x->type != INT || y->type != INT){
     perror("[prim_lt] < takes only numbers");
   }
-  return x->integer < y->integer ? make_true() : make_nil();
+  return x->integer < y->integer ? True : Nil;
 }
 
 // (if expr expr expr ...)
 obj* prim_if(obj *env, obj *list) {
   if (length(list) < 2){
     perror("[prim_if] Malformed if");
+    return Nil;
   }
   obj* cond = list->car;
   cond = eval(env, cond);
@@ -679,10 +687,39 @@ obj* prim_if(obj *env, obj *list) {
     return eval(env, then);
   }
   obj* els = list->cdr->cdr;
-  return els->type == NIL ? make_nil() : progn(env, els);
+  return els->type == NIL ? Nil : progn(env, els);
 }
 
+// (while cond expr ...)
+obj* prim_while(obj *env, obj *list) {
+  if (length(list) < 2){
+    perror("[prim_while] Malformed while");
+    return Nil;
+  }
+  obj* cond = list->car;
+  obj* exprs = Nil;
+  while (eval(env, cond) != Nil) {
+    exprs = list->cdr;
+    eval_list(env, exprs);
+  }
+  //printf("while\n");
+  return Nil;
+}
 
+// (= <integer> <integer>)
+obj* prim_num_eq(obj *env, obj *list) {
+  if (length(list) != 2){
+    perror("[prim_num_eq] Malformed =");
+    return Nil;
+  }
+  obj* values = eval_list(env, list);
+  obj* x = values->car;
+  obj* y = values->cdr->car;
+  if (x->type != INT || y->type != INT){
+    perror("[prim_num_eq] = only takes numbers");
+  }
+  return x->integer == y->integer ? True : Nil;
+}
 
 void add_variable(obj* env, obj* sym, obj* val) {
     obj* vars = env->vars;
@@ -706,6 +743,8 @@ void define_primitive(obj* env){
   add_primitive(env, "printa", prim_printa);
   add_primitive(env, "<", prim_lt);
   add_primitive(env, "if", prim_if);
+  add_primitive(env, "while", prim_while);
+  add_primitive(env, "=", prim_num_eq);
 }
 
 
@@ -846,8 +885,8 @@ int main(int argc, char **argv){
   }
   pid = atoi(argv[1]);
     
-  symbol_table = make_nil();
-  obj* nil = make_nil();
+  symbol_table = Nil;
+  obj* nil = Nil;
   obj* env = make_env(nil, nil);
   define_primitive(env);
   define_globalvar(env);
