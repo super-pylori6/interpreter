@@ -21,7 +21,7 @@ enum {
   FUNC,
   ENV,
   GVAR,
-  //RES
+  TRUE
 };
 
 
@@ -131,22 +131,18 @@ obj* make_env(obj* vars, obj* up){
 obj* make_gvar(int typenum, long addr){
   obj* tmp = (obj*)malloc(sizeof(obj));
   tmp->type = GVAR;
-  //tmp->gvarnum = gvarnum;
   tmp->typenum = typenum;
   tmp->val = addr;
   return tmp;
 }
 
-/*
-// 情報取得結果を格納するobjを定義する
-obj* make_res(int typenum, long val){
+// 真を表すobjを定義する
+obj* make_true(void){
   obj* tmp = (obj*)malloc(sizeof(obj));
-  tmp->type = RES;
-  tmp->typenum = typenum;
-  tmp->val = val;
+  tmp->type = TRUE;
   return tmp;
 }
-*/
+
 
 /*
  * read
@@ -647,6 +643,21 @@ obj* prim_printa(obj* env, obj* list){
   }
 }
 
+// (< <integer> <integer>)
+obj* prim_lt(obj *env, obj *list) {
+    obj *args = eval_list(env, list);
+    if(length(args) != 2){
+      perror("[prim_lt] malformed <");
+      return make_nil();
+    }
+    obj *x = args->car;
+    obj *y = args->cdr->car;
+    if(x->type != INT || y->type != INT){
+      perror("[prim_lt] < takes only numbers");
+    }
+    return x->integer < y->integer ? make_true() : make_nil();
+}
+
 
 
 void add_variable(obj* env, obj* sym, obj* val) {
@@ -658,7 +669,6 @@ void add_variable(obj* env, obj* sym, obj* val) {
 void add_primitive(obj* env, char* sym, primitive* prim){
   obj* s = check_symbol(sym);
   obj* p = make_prim(prim);
-
   add_variable(env, s, p);
 }
 
@@ -670,6 +680,7 @@ void define_primitive(obj* env){
   add_primitive(env, "->", prim_member_indirect);
   add_primitive(env, "printp", prim_printp);
   add_primitive(env, "printa", prim_printa);
+  add_primitive(env, "<", prim_lt);
 }
 
 
@@ -790,6 +801,9 @@ void print(obj* o){
   case GVAR:
     print_gvar(o);
     break;
+  case TRUE:
+    printf("TRUE");
+    break;
   default:
     printf("[print] not defined");
     break;
@@ -803,6 +817,7 @@ int main(int argc, char **argv){
   
   if(argc != 2){
     perror("[main] argc error");
+    return 0;
   }
   pid = atoi(argv[1]);
     
