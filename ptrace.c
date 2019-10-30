@@ -337,6 +337,15 @@ obj* lookup(obj* env, obj* sym){
   return make_nil();
 }
 
+obj* progn(obj *env, obj *list) {
+  obj* r = make_nil();
+  for (obj* lp = list; lp->type != NIL; lp = lp->cdr) {
+    r = lp->car;
+    r = eval(env, r);
+  }
+  return r;
+}
+
 obj* eval_list(obj* env, obj* list){
   if(list->type != LIST){
     return eval(env, list);
@@ -645,17 +654,32 @@ obj* prim_printa(obj* env, obj* list){
 
 // (< <integer> <integer>)
 obj* prim_lt(obj *env, obj *list) {
-    obj *args = eval_list(env, list);
-    if(length(args) != 2){
-      perror("[prim_lt] malformed <");
-      return make_nil();
-    }
-    obj *x = args->car;
-    obj *y = args->cdr->car;
-    if(x->type != INT || y->type != INT){
-      perror("[prim_lt] < takes only numbers");
-    }
-    return x->integer < y->integer ? make_true() : make_nil();
+  obj *args = eval_list(env, list);
+  if(length(args) != 2){
+    perror("[prim_lt] malformed <");
+    return make_nil();
+  }
+  obj *x = args->car;
+  obj *y = args->cdr->car;
+  if(x->type != INT || y->type != INT){
+    perror("[prim_lt] < takes only numbers");
+  }
+  return x->integer < y->integer ? make_true() : make_nil();
+}
+
+// (if expr expr expr ...)
+obj* prim_if(obj *env, obj *list) {
+  if (length(list) < 2){
+    perror("[prim_if] Malformed if");
+  }
+  obj* cond = list->car;
+  cond = eval(env, cond);
+  if (cond->type != NIL) {
+    obj* then = list->cdr->car;
+    return eval(env, then);
+  }
+  obj* els = list->cdr->cdr;
+  return els->type == NIL ? make_nil() : progn(env, els);
 }
 
 
@@ -681,6 +705,7 @@ void define_primitive(obj* env){
   add_primitive(env, "printp", prim_printp);
   add_primitive(env, "printa", prim_printa);
   add_primitive(env, "<", prim_lt);
+  add_primitive(env, "if", prim_if);
 }
 
 
