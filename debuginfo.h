@@ -35,10 +35,10 @@ struct typeinfo {
     };
 };
 
-extern struct globalvar globalvars[9];
+extern struct globalvar globalvars[10];
 extern struct memberinfo person[7];
 extern struct memberinfo kyuuyo[4];
-extern struct memberinfo syain_dt[5];
-extern struct typeinfo types[23];
+extern struct memberinfo syain_dt[6];
+extern struct typeinfo types[26];
 
 #endif

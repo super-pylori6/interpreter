@@ -460,38 +460,6 @@ int search_memb(char* memb, int typenum){
   return -1;
 }
 
-obj* get_member_direct(obj* stru, obj* memb){
-  int typenum = stru->typenum;
-
-  //指定の構造体が指定のメンバを持つか検索
-  int i = search_memb(memb->symbol, typenum);
-  if(i<0){
-    perror("[get_member_direct] no member");
-    return make_nil();
-  }
-
-  int membtypenum = types[typenum].mem[i].typenum;
-  long membaddr = stru->val + types[typenum].mem[i].offset;
-
-  return get_gvar(make_gvar(membtypenum, membaddr));
-}
-
-obj* get_member_indirect(obj* stru, obj* memb){
-  int typenum = stru->typenum;
-  
-  //指定の構造体が指定のメンバを持つか検索
-  int i = search_memb(memb->symbol, typenum);
-  if(i<0){
-    perror("[get_member_direct] no member");
-    return make_nil();
-  }
-
-  int membtypenum = types[typenum].mem[i].typenum;
-  long membaddr = stru->val + types[typenum].mem[i].offset;
-  
-  return get_gvar(make_gvar(membtypenum, membaddr));
-}
-
 /*
  * primitive
  */
@@ -530,15 +498,43 @@ obj* prim_define(obj* env, obj* list){
   return value;
 }
 
+obj* get_member_direct(obj* stru, obj* memb){
+  int typenum = stru->typenum;
+
+  //指定の構造体が指定のメンバを持つか検索
+  int i = search_memb(memb->symbol, typenum);
+  if(i<0){
+    perror("[get_member_direct] no member");
+    return make_nil();
+  }
+
+  int membtypenum = types[typenum].mem[i].typenum;
+  long membaddr = stru->val + types[typenum].mem[i].offset;
+
+  return get_gvar(make_gvar(membtypenum, membaddr));
+}
+
+obj* get_member_indirect(obj* poin, obj* memb){
+  int typenum = types[poin->typenum].saki;
+  long val = read_mem(8, poin->val);
+
+  return get_member_direct(make_gvar(typenum, val), memb);
+}
+
 // (. <struct> <member>)
 obj* prim_member_direct(obj* env, obj* list){
   obj* stru = eval(env, list->car);
   
   if(!stru){
-    perror("[prim_member_direct] not gvar");
+    perror("[prim_member_direct] no obj");
     return make_nil();
   }
   
+  if(stru->type != GVAR){
+    perror("[prim_member_direct] not gvar");
+    return make_nil();
+  }
+
   int typenum = stru->typenum;
   if(types[typenum].kind != structure){
     perror("[prim_member_direct] not struct");
@@ -548,18 +544,23 @@ obj* prim_member_direct(obj* env, obj* list){
   return get_member_direct(stru, list->cdr->car);
 }
 
-// (-> <struct> <member>)
+// (-> <struct pointer> <member>)
 obj* prim_member_indirect(obj* env, obj* list){
   obj* stru = eval(env, list->car);
   
   if(!stru){
+    perror("[prim_member_direct] no obj");
+    return make_nil();
+  }
+
+  if(stru->type != GVAR){
     perror("[prim_member_direct] not gvar");
     return make_nil();
   }
   
   int typenum = stru->typenum;
-  if(types[typenum].kind != structure){
-    perror("[prim_member_direct] not struct");
+  if(types[typenum].kind != pointer || types[types[typenum].saki].kind != structure){
+    perror("[prim_member_direct] not struct pointer");
     return make_nil();
   }
 

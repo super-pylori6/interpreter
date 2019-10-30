@@ -1,5 +1,7 @@
 #include<stdio.h>
 #include <unistd.h>
+#include <stdlib.h> // malloc()
+
 
 int ggg = 4;
 long hhh = 6;
@@ -30,7 +32,11 @@ struct person {
 struct person tanaka = {
   "T.Tanaka",'m',30,"Tokyo","teacher",1,1
 };
-  
+
+struct person ito = {
+  "K.Ito",'f',25,"Osaka","teacher",2,3
+};
+
 struct kyuuyo{
   long kihon;
   long jyutaku;
@@ -53,6 +59,7 @@ struct syain_dt tokyo = {
   "Manager",
   10,
   {20, 5, 2, 1},
+  &tanaka
 };
 
 int main(void){
