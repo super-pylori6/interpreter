@@ -1,14 +1,14 @@
 #ifndef _DEBUGINFO_H
 #define _DEBUGINFO_H
 
-struct globalvar {
-    int typenum;
+struct gvarinfo {
+    int tidx;
     char* name;
     long addr;
 };
 
 struct memberinfo {
-    int typenum;
+    int tidx;
     char* name;
     long offset;
 };
@@ -35,7 +35,7 @@ struct typeinfo {
     };
 };
 
-extern struct globalvar globalvars[10];
+extern struct gvarinfo gvars[10];
 extern struct memberinfo person[7];
 extern struct memberinfo kyuuyo[4];
 extern struct memberinfo syain_dt[6];

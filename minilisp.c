@@ -871,7 +871,6 @@ static Obj *prim_define(void *root, Obj **env, Obj **list) {
         error("Malformed define");
     DEFINE2(sym, value);
     *sym = (*list)->car;
-    printf("test: %d\n", (*list)->car->type);
     *value = (*list)->cdr->car;
     *value = eval(root, env, value);
     add_variable(root, env, sym, value);

@@ -1,6 +1,6 @@
 #include "debuginfo.h"
 
-struct globalvar globalvars[10] = {
+struct gvarinfo gvars[10] = {
     {6, "ggg", 0x601060},
     {7, "hhh", 0x601068},
     {12, "p", 0x601180},

@@ -2,11 +2,15 @@
 #include <stdlib.h> // malloc()
 #include <ctype.h> // isdigit(), isalpha()
 #include <string.h> // strchr()
-#include <assert.h> // assert()
-#include <sys/ptrace.h> // ptrace()
-#include <sys/wait.h> // waitpid()
 #include <sysexits.h> // exit(EXIT_SUCCESS)
 #include "debuginfo.h"
+
+#define PTRACE_ON
+
+#ifdef PTRACE_ON
+#include <sys/ptrace.h> // ptrace()
+#include <sys/wait.h> // waitpid()
+#endif
 
 #define SYMBOL_MAX_LEN 100
 
@@ -16,14 +20,13 @@ enum {
   SYM,
   PRIM,
   LIST,
-  NIL,
-  RPAREN,
   FUNC,
   ENV,
   GVAR,
-  TRUE
+  RPAREN,
+  TRUE,
+  NIL,
 };
-
 
 struct obj;
 
@@ -34,7 +37,7 @@ typedef struct obj {
   int type;
   union {
     // 数値
-    int integer;
+    int value;
     // 文字列
     char* string;
     // シンボル
@@ -53,12 +56,13 @@ typedef struct obj {
     };
     // グローバル変数及び結果
     struct {
-      int typenum;
-      long val;
+      int tidx;
+      long data;
     };
   };
 } obj;
 
+obj* Rparen = &(obj){RPAREN};
 obj* True = &(obj){TRUE};
 obj* Nil = &(obj){NIL};
 
@@ -69,15 +73,15 @@ pid_t pid;
 obj* get_gvar(obj* o);
 
 
-/*
- * constructor
- */
+//================
+// constructor
+//================
 
 // 数値を格納するobjを定義する
-obj* make_int(int integer){
+obj* make_int(int value){
   obj* tmp = (obj*)malloc(sizeof(obj));
   tmp->type = INT;
-  tmp->integer = integer;
+  tmp->value = value;
   return tmp;
 }
 
@@ -99,20 +103,6 @@ obj* make_list(obj* car, obj* cdr){
   return tmp;
 }
 
-// NIL定数を表すobjを定義する
-obj* make_nil(void){
-  obj* tmp = (obj*)malloc(sizeof(obj));
-  tmp->type = NIL;
-  return tmp;
-}
-
-// 右括弧を表すobjを定義する
-obj* make_rparen(void){
-  obj* tmp = (obj*)malloc(sizeof(obj));
-  tmp->type = RPAREN;
-  return tmp;
-}
-
 // 基本関数を格納するobjを定義する
 obj* make_prim(primitive* prim){
   obj* tmp = (obj*)malloc(sizeof(obj));
@@ -131,31 +121,23 @@ obj* make_env(obj* vars, obj* up){
 }
 
 // 対象プロセスのグローバル変数情報を格納するobjを定義する
-obj* make_gvar(int typenum, long addr){
+obj* make_gvar(int tidx, long data){
   obj* tmp = (obj*)malloc(sizeof(obj));
   tmp->type = GVAR;
-  tmp->typenum = typenum;
-  tmp->val = addr;
-  return tmp;
-}
-
-// 真を表すobjを定義する
-obj* make_true(void){
-  obj* tmp = (obj*)malloc(sizeof(obj));
-  tmp->type = TRUE;
+  tmp->tidx = tidx;
+  tmp->data = data;
   return tmp;
 }
 
 
-/*
- * read
- */
+//================
+// read
+//================
 
 obj* read(void);
-void print(obj* o);
-
 
 // １文字先読みする
+// ungetc()でストリームに１文字返す
 int peek(void) {
   int c = getchar();
   ungetc(c, stdin);
@@ -165,7 +147,7 @@ int peek(void) {
 // リストを反転する
 obj* reverse(obj* o){
   obj* ret = Nil;
-  while(o->type != NIL){
+  while(o != Nil){
     obj* head = o;
     o = o->cdr;
     head->cdr = ret;
@@ -181,33 +163,29 @@ obj* read_list(void){
   obj* head = Nil;
   for(;;){
     obj* tmp = read();
-    if(!tmp || tmp->type == NIL){
-      printf("右括弧がありません\n");
+    if(!tmp || tmp == Nil){
+      perror("[read_list] no )\n");
       return NULL;
     }
-    else if(tmp->type == RPAREN){
+    else if(tmp == Rparen){
       return reverse(head); //リストを反転して返す
     }
     head = make_list(tmp, head); // 先頭に挿入する
   }
 }
 
-obj* read_rparen(void){
-  return make_rparen();
-}
-
 // 数値を読み込む
 // 後続文字が数字である限り数値を計算する
-obj* read_num(int integer){
+obj* read_num(int value){
   while(isdigit(peek())){
-    integer = integer * 10 + getchar() - '0';
+    value = value * 10 + getchar() - '0';
   }
-  return make_int(integer);
+  return make_int(value);
 }
 
 // すでに同じ名前のシンボルがあるか確認する
 obj* check_symbol(char* symbol){
-  for(obj *o = symbol_table; o->type != NIL; o = o->cdr){
+  for(obj *o = symbol_table; o != Nil; o = o->cdr){
     if(strcmp(symbol, o->car->symbol) == 0){
       return o->car;
     }
@@ -227,7 +205,7 @@ obj* read_symbol(char c){
   int len = 1;
   while(isalnum(peek()) || strchr(symbol_chars, peek())){
     if(SYMBOL_MAX_LEN <= len){
-      printf("シンボル名が長過ぎます\n");
+      printf("[read_symbol] too long symbol name");
       return NULL;
     }
     symbol[len++] = getchar();
@@ -237,23 +215,41 @@ obj* read_symbol(char c){
   return check_symbol(symbol);
 }
 
-void quit(void){
+void init(void){
   int ret;
   
-  ret = ptrace(PTRACE_CONT, pid, NULL, NULL);
-  if(ret != 0){
-    perror("[main] PTRACE_CONT error\n");
-    return;
-  }
-  kill(pid, SIGSTOP);
-  waitpid(pid, NULL, 0);
+#ifdef PTRACE_ON
+  ret = ptrace(PTRACE_ATTACH, pid, NULL, NULL);
+#endif
   
-  ret = ptrace(PTRACE_DETACH, pid, NULL, NULL);
   if(ret != 0){
-    perror("[main] PTRACE_DETACH error\n");
-    return;
+    perror("[main] ATTACH error\n");
+    exit(EXIT_FAILURE);
+  }
+}
+
+void quit(void){
+  int ret;
+
+#ifdef PTRACE_ON
+  ret = ptrace(PTRACE_CONT, pid, NULL, NULL);
+  
+  if(ret != 0){
+    perror("[main] CONT error\n");
+    exit(EXIT_FAILURE);
   }
 
+  kill(pid, SIGSTOP);
+  waitpid(pid, NULL, 0);
+
+  ret = ptrace(PTRACE_DETACH, pid, NULL, NULL);
+#endif
+  
+  if(ret != 0){
+    perror("[main] DETACH error\n");
+    exit(EXIT_FAILURE);
+  }
+  
   exit(EXIT_SUCCESS);
 }
 
@@ -276,23 +272,6 @@ obj* read_s(void){
   }
 }
 
-/*
-obj* read_s(void) {
-  int c1 = getchar();
-  int c2 = getchar();
-  
-  if(c1 == ':' && c2 == 'q'){
-    quit();
-  }
-  else{
-    ungetc(c2, stdin);
-    ungetc(c1, stdin);
-  }
-
-  return read();
-}
-*/
-
 // 読み込み
 // 空白は飛ばす
 obj* read(void){
@@ -305,7 +284,7 @@ obj* read(void){
       return read_list();
     }
     else if(c == ')'){
-      return read_rparen();
+      return Rparen;
     }
     else if(isdigit(c)){
       return read_num(c - '0');
@@ -320,18 +299,18 @@ obj* read(void){
   }
 }
 
-/*
- * eval
- */
+//================
+// eval
+//================
 
 obj* eval(obj* env, obj* o);
 
 // 環境を調べて変数を検索する
 // 未定義ならNULLを返す
 obj* lookup(obj* env, obj* sym){
-  for(obj* e = env; e->type != NIL; e = e->up){
-    for(obj* cell = e->vars; cell->type != NIL; cell = cell->cdr){
-      obj* tmp = cell->car;
+  for(obj* e = env; e != Nil; e = e->up){
+    for(obj* list = e->vars; list != Nil; list = list->cdr){
+      obj* tmp = list->car;
       if(sym == tmp->car){
 	return tmp;
       }
@@ -340,9 +319,10 @@ obj* lookup(obj* env, obj* sym){
   return Nil;
 }
 
+// listの要素をすべて評価する
 obj* progn(obj *env, obj *list) {
   obj* r = Nil;
-  for (obj* lp = list; lp->type != NIL; lp = lp->cdr) {
+  for (obj* lp = list; lp != Nil; lp = lp->cdr) {
     r = lp->car;
     r = eval(env, r);
   }
@@ -356,7 +336,7 @@ obj* eval_list(obj* env, obj* list){
   obj* head = Nil;
   obj* o = Nil;
   obj* result = Nil;  
-  for(obj* lp = list; lp->type != NIL; lp = lp->cdr){
+  for(obj* lp = list; lp != Nil; lp = lp->cdr){
     o = lp->car;
     result = eval(env, o);
     head = make_list(result, head);
@@ -365,7 +345,7 @@ obj* eval_list(obj* env, obj* list){
 }
 
 obj* apply(obj* env, obj* fn, obj* args){
-  if(args->type != LIST && args->type != NIL){
+  if(args->type != LIST && args != Nil){
     perror("[apply] obj->type error");
   }
   if(fn->type != PRIM){
@@ -375,15 +355,22 @@ obj* apply(obj* env, obj* fn, obj* args){
 }
 
 obj* eval(obj* env, obj* o){
+  if(!o){
+    perror("[eval] no obj");
+    return NULL;
+  }
+  
   switch(o->type){
   case INT:
   case STR:
   case PRIM:
+  case TRUE:
   case NIL:
+  case GVAR:
     return o;
   case SYM:{
     obj* list_sym = lookup(env, o);
-    if(list_sym->type == NIL){
+    if(list_sym == Nil){
       perror("[eval] no symbol");
       return Nil;
     }
@@ -409,49 +396,50 @@ obj* eval(obj* env, obj* o){
   }
 }
 
-/*
- * ptrace処理
- */
+//================
+// introspect
+//================
+
 
 // メンバ取得処理を作成する
 
 long read_mem(int size, long addr){
-  //printf("%lx\n", addr);
+#ifdef PTRACE_ON
   return ptrace(PTRACE_PEEKDATA, pid, addr, NULL);
+#endif
 }
 
 obj* get_base(obj* o){
-  int typenum = o->typenum;
-  long val = read_mem(8, o->val);
-  return make_gvar(typenum, val);
+  int tidx = o->tidx;
+  long data = read_mem(8, o->data);
+  return make_gvar(tidx, data);
 }
 
 obj* get_pointer(obj* o){
-  int typenum = o->typenum;
-  return make_gvar(typenum, o->val);
+  int tidx = o->tidx;
+  return make_gvar(tidx, o->data);
 }
 
 obj* get_array(obj* o){
   return get_pointer(o);
 }
 
-
 obj* get_struct(obj* o){
   return get_pointer(o);
 }
 
 obj* get_gvar(obj* o){
-  int typenum = o->typenum;
-  if(types[typenum].kind == base){
+  int tidx = o->tidx;
+  if(types[tidx].kind == base){
     return get_base(o);
   }
-  else if(types[typenum].kind == pointer){
+  else if(types[tidx].kind == pointer){
     return get_pointer(o);
   }
-  else if(types[typenum].kind == array){
+  else if(types[tidx].kind == array){
     return get_array(o);
   }
-  else if(types[typenum].kind == structure){
+  else if(types[tidx].kind == structure){
     return get_struct(o);
   }
   else{
@@ -459,9 +447,9 @@ obj* get_gvar(obj* o){
   }
 }
 
-int search_memb(char* memb, int typenum){
-  for(int i=0;types[typenum].memnum;i++){
-    if(strcmp(memb, types[typenum].mem[i].name) == 0){
+int search_memb(char* memb, int tidx){
+  for(int i=0;types[tidx].memnum;i++){
+    if(strcmp(memb, types[tidx].mem[i].name) == 0){
       return i;
     }
   }
@@ -485,11 +473,11 @@ int length(obj *list) {
 // (+ 1 2 ...)
 obj* prim_add(obj* env, obj* list){
   int sum = 0;
-  for(obj* args = eval_list(env, list); args->type != NIL; args = args->cdr) {
+  for(obj* args = eval_list(env, list); args != Nil; args = args->cdr) {
     if(args->car->type != INT){
       perror("[prim_add] args type error");
     }
-    sum += args->car->integer;
+    sum += args->car->value;
   }
   return make_int(sum);
 }
@@ -514,26 +502,26 @@ obj* prim_define(obj* env, obj* list){
 }
 
 obj* get_member_direct(obj* stru, obj* memb){
-  int typenum = stru->typenum;
+  int tidx = stru->tidx;
 
   //指定の構造体が指定のメンバを持つか検索
-  int i = search_memb(memb->symbol, typenum);
+  int i = search_memb(memb->symbol, tidx);
   if(i<0){
     perror("[get_member_direct] no member");
     return Nil;
   }
 
-  int membtypenum = types[typenum].mem[i].typenum;
-  long membaddr = stru->val + types[typenum].mem[i].offset;
+  int membtidx = types[tidx].mem[i].tidx;
+  long membaddr = stru->data + types[tidx].mem[i].offset;
 
-  return get_gvar(make_gvar(membtypenum, membaddr));
+  return get_gvar(make_gvar(membtidx, membaddr));
 }
 
 obj* get_member_indirect(obj* poin, obj* memb){
-  int typenum = types[poin->typenum].saki;
-  long val = read_mem(8, poin->val);
+  int tidx = types[poin->tidx].saki;
+  long data = read_mem(8, poin->data);
 
-  return get_member_direct(make_gvar(typenum, val), memb);
+  return get_member_direct(make_gvar(tidx, data), memb);
 }
 
 // (. <struct> <member>)
@@ -550,8 +538,8 @@ obj* prim_member_direct(obj* env, obj* list){
     return Nil;
   }
 
-  int typenum = stru->typenum;
-  if(types[typenum].kind != structure){
+  int tidx = stru->tidx;
+  if(types[tidx].kind != structure){
     perror("[prim_member_direct] not struct");
     return Nil;
   }
@@ -573,8 +561,8 @@ obj* prim_member_indirect(obj* env, obj* list){
     return Nil;
   }
   
-  int typenum = stru->typenum;
-  if(types[typenum].kind != pointer || types[types[typenum].saki].kind != structure){
+  int tidx = stru->tidx;
+  if(types[tidx].kind != pointer || types[types[tidx].saki].kind != structure){
     perror("[prim_member_direct] not struct pointer");
     return Nil;
   }
@@ -591,30 +579,30 @@ obj* prim_printp(obj* env, obj* list){
     return Nil;
   }
 
-  int typenum = o->typenum;
-  if(types[typenum].kind != pointer){
+  int tidx = o->tidx;
+  if(types[tidx].kind != pointer){
     perror("[prim_printp] not pointer");
     return Nil;
   }
   
   int i, j;
-  long addr = o->val;
-  long val;
-  int pcount = types[typenum].pcount;
+  long addr = o->data;
+  long data;
+  int pcount = types[tidx].pcount;
 
-  if(strcmp(types[typenum].name, "char") == 0){
+  if(strcmp(types[tidx].name, "char") == 0){
     int size=256;
     char *str = (char*)malloc(sizeof(char)*size);
     for(i=0;i<pcount;i++){
       addr = read_mem(8, addr);
     }
     for(i=0;i<size;i+=sizeof(long)){
-      val = read_mem(8, addr+i);
-      memcpy(str+i, &val, sizeof(long));
+      data = read_mem(8, addr+i);
+      memcpy(str+i, &data, sizeof(long));
       for(j=0;j<sizeof(long);j++){
 	if(str[i+j] == '\0'){
 	  printf("%s\n", str);
-	  //return make_gvar(typenum, (long)str);
+	  //return make_gvar(tidx, (long)str);
 	  return Nil;
 	}
       }
@@ -635,25 +623,25 @@ obj* prim_printa(obj* env, obj* list){
     return Nil;
   }
 
-  int typenum = o->typenum;
-  if(types[typenum].kind != array){
+  int tidx = o->tidx;
+  if(types[tidx].kind != array){
     perror("[prim_printp] not pointer");
     return Nil;
   }
   
   int i;
-  long val;
-  long addr = o->val;
-  int arraysize = types[typenum].arraysize;
+  long data;
+  long addr = o->data;
+  int arraysize = types[tidx].arraysize;
   
-  if(strcmp(types[typenum].name, "char") == 0){
-    char* str = (char*)malloc(sizeof(char)*types[typenum].arraysize);
+  if(strcmp(types[tidx].name, "char") == 0){
+    char* str = (char*)malloc(sizeof(char)*types[tidx].arraysize);
     for(i=0;i<arraysize;i+=sizeof(long)){
-      val = read_mem(8, addr+i);
-      memcpy(str+i, &val, sizeof(long));
+      data = read_mem(8, addr+i);
+      memcpy(str+i, &data, sizeof(long));
     }
     printf("%s\n", str);
-    //return make_gvar(typenum, (long)str);
+    //return make_gvar(tidx, (long)str);
     return Nil;
   }
   else{
@@ -662,7 +650,7 @@ obj* prim_printa(obj* env, obj* list){
   }
 }
 
-// (< <integer> <integer>)
+// (< <value> <value>)
 obj* prim_lt(obj *env, obj *list) {
   obj *args = eval_list(env, list);
   if(length(args) != 2){
@@ -674,7 +662,7 @@ obj* prim_lt(obj *env, obj *list) {
   if(x->type != INT || y->type != INT){
     perror("[prim_lt] < takes only numbers");
   }
-  return x->integer < y->integer ? True : Nil;
+  return x->value < y->value ? True : Nil;
 }
 
 // (if expr expr expr ...)
@@ -685,12 +673,12 @@ obj* prim_if(obj *env, obj *list) {
   }
   obj* cond = list->car;
   cond = eval(env, cond);
-  if (cond->type != NIL) {
+  if (cond != Nil) {
     obj* then = list->cdr->car;
     return eval(env, then);
   }
   obj* els = list->cdr->cdr;
-  return els->type == NIL ? Nil : progn(env, els);
+  return els == Nil ? Nil : progn(env, els);
 }
 
 // (while cond expr ...)
@@ -709,7 +697,7 @@ obj* prim_while(obj *env, obj *list) {
   return Nil;
 }
 
-// (= <integer> <integer>)
+// (= <value> <value>)
 obj* prim_num_eq(obj *env, obj *list) {
   if (length(list) != 2){
     perror("[prim_num_eq] Malformed =");
@@ -721,7 +709,7 @@ obj* prim_num_eq(obj *env, obj *list) {
   if (x->type != INT || y->type != INT){
     perror("[prim_num_eq] = only takes numbers");
   }
-  return x->integer == y->integer ? True : Nil;
+  return x->value == y->value ? True : Nil;
 }
 
 void add_variable(obj* env, obj* sym, obj* val) {
@@ -751,19 +739,25 @@ void define_primitive(obj* env){
 }
 
 
-void define_globalvar(obj* env){
-  for(int i=0;i<sizeof(globalvars)/sizeof(globalvars[0]);i++){
-    obj* s = check_symbol(globalvars[i].name);
-    obj* gvar = make_gvar(globalvars[i].typenum, globalvars[i].addr);
+void define_gvar(obj* env){
+  for(int i=0;i<sizeof(gvars)/sizeof(gvars[0]);i++){
+    obj* s = check_symbol(gvars[i].name);
+    obj* gvar = make_gvar(gvars[i].tidx, gvars[i].addr);
     add_variable(env, s, gvar);
   }
 }
+
+//================
+// print
+//================
+
+void print(obj* o);
 
 // リストを表示する
 void print_list(obj* o){
   for(;;){
     print(o->car);
-    if(o->cdr->type == NIL){
+    if(o->cdr == Nil){
       break;
     }
     printf(" ");
@@ -772,32 +766,32 @@ void print_list(obj* o){
 }
 
 void print_base(obj* o){
-  if(strcmp(types[o->typenum].name, "long unsigned int") == 0){
-    printf("%lu : %s", (long unsigned int)o->val, types[o->typenum].name);
+  if(strcmp(types[o->tidx].name, "long unsigned int") == 0){
+    printf("%lu : %s", (long unsigned int)o->data, types[o->tidx].name);
   }
-  else if(strcmp(types[o->typenum].name, "short unsigned int") == 0){
-    printf("%u : %s", (short unsigned int)o->val, types[o->typenum].name);
+  else if(strcmp(types[o->tidx].name, "short unsigned int") == 0){
+    printf("%u : %s", (short unsigned int)o->data, types[o->tidx].name);
   }
-  else if(strcmp(types[o->typenum].name, "unsigned int") == 0){
-    printf("%u : %s", (unsigned int)o->val, types[o->typenum].name);
+  else if(strcmp(types[o->tidx].name, "unsigned int") == 0){
+    printf("%u : %s", (unsigned int)o->data, types[o->tidx].name);
   }
-  else if(strcmp(types[o->typenum].name, "short int") == 0){
-    printf("%d : %s", (short int)o->val, types[o->typenum].name);
+  else if(strcmp(types[o->tidx].name, "short int") == 0){
+    printf("%d : %s", (short int)o->data, types[o->tidx].name);
   }
-  else if(strcmp(types[o->typenum].name, "int") == 0){
-    printf("%d : %s", (int)o->val, types[o->typenum].name);
+  else if(strcmp(types[o->tidx].name, "int") == 0){
+    printf("%d : %s", (int)o->data, types[o->tidx].name);
   }
-  else if(strcmp(types[o->typenum].name, "long int") == 0){
-    printf("%ld : %s", o->val, types[o->typenum].name);
+  else if(strcmp(types[o->tidx].name, "long int") == 0){
+    printf("%ld : %s", o->data, types[o->tidx].name);
   }
-  else if(strcmp(types[o->typenum].name, "float") == 0){
-    printf("%f : %s", (float)o->val, types[o->typenum].name);
+  else if(strcmp(types[o->tidx].name, "float") == 0){
+    printf("%f : %s", (float)o->data, types[o->tidx].name);
   }
-  else if(strcmp(types[o->typenum].name, "double") == 0){
-    printf("%lf : %s", (double)o->val, types[o->typenum].name);
+  else if(strcmp(types[o->tidx].name, "double") == 0){
+    printf("%lf : %s", (double)o->data, types[o->tidx].name);
   }
-  else if(strcmp(types[o->typenum].name, "char") == 0){
-    printf("%c : %s", (char)o->val, types[o->typenum].name);
+  else if(strcmp(types[o->tidx].name, "char") == 0){
+    printf("%c : %s", (char)o->data, types[o->tidx].name);
   }
   else{
     perror("[print_base] not defined");
@@ -805,7 +799,7 @@ void print_base(obj* o){
 }
 
 void print_pointer(obj* o){
-  printf("0x%lx : %s*", o->val, types[o->typenum].name);
+  printf("0x%lx : %s*", o->data, types[o->tidx].name);
 }
 
 void print_array(obj* o){
@@ -817,16 +811,16 @@ void print_struct(obj* o){
 }
 
 void print_gvar(obj* o){
-  if(types[o->typenum].kind == base){
+  if(types[o->tidx].kind == base){
     print_base(o);
   }
-  else if(types[o->typenum].kind == pointer){
+  else if(types[o->tidx].kind == pointer){
     print_pointer(o);
   }
-  else if(types[o->typenum].kind == array){
+  else if(types[o->tidx].kind == array){
     print_array(o);
   }
-  else if(types[o->typenum].kind == structure){
+  else if(types[o->tidx].kind == structure){
     print_struct(o);
   }
   else{
@@ -841,9 +835,10 @@ void print(obj* o){
     perror("[print] no obj");
     return;
   }
+  
   switch(o->type){
   case INT:
-    printf("%d", o->integer);
+    printf("%d", o->value);
     break;
   case STR:
     printf("%s", o->string);
@@ -889,34 +884,17 @@ int main(int argc, char **argv){
   pid = atoi(argv[1]);
     
   symbol_table = Nil;
-  obj* nil = Nil;
-  obj* env = make_env(nil, nil);
+  obj* env = make_env(Nil, Nil);
   define_primitive(env);
-  define_globalvar(env);
-
-  ret = ptrace(PTRACE_ATTACH, pid, NULL, NULL);
-  if(ret != 0){
-    perror("[main] PTRACE_ATTACH error\n");
-    return 0;
-  }
+  define_gvar(env);
+  
+  init();
   
   for(;;){
     print(eval(env, read_s()));
   }
   
-  ret = ptrace(PTRACE_CONT, pid, NULL, NULL);
-  if(ret != 0){
-    perror("[main] PTRACE_CONT error\n");
-    return 0;
-  }
-  kill(pid, SIGSTOP);
-  waitpid(pid, NULL, 0);
-    
-  ret = ptrace(PTRACE_DETACH, pid, NULL, NULL);
-  if(ret != 0){
-    perror("[main] PTRACE_DETACH error\n");
-    return 0;
-  }
+  quit();
 
   return 0;
 }

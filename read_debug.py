@@ -18,7 +18,7 @@ TYPE_GET = 0
 
 datatype_dict = {}
 struct_list_all = []
-globalvar_list_all = []
+gvar_list_all = []
 offset_num_dict = {}
 
 READFILE = "target.debug"
@@ -52,17 +52,17 @@ def getaddr(line):
     addr_m = re.search("0x[0-9a-f]*", line.rstrip('\n'))
     return addr_m.group()
 
-def getglobalvarname(line):
-    globalvarname_m = re.search("\<.*\>", line.rstrip('\n'))
-    globalvarname = re.sub("[\<\>]", "", globalvarname_m.group())
-    return globalvarname
+def getgvarname(line):
+    gvarname_m = re.search("\<.*\>", line.rstrip('\n'))
+    gvarname = re.sub("[\<\>]", "", gvarname_m.group())
+    return gvarname
 
 
-def print_globalvar():
-    print("struct globalvar globalvars[" + str(len(globalvar_list_all)) + "] = {")
-    for l in globalvar_list_all:
+def print_gvar():
+    print("struct gvar gvars[" + str(len(gvar_list_all)) + "] = {")
+    for l in gvar_list_all:
         print("    {" + str(l[0]) + ", " + "\"" + l[1] + "\"" + ", " + l[2] + "}", end="")
-        if l != globalvar_list_all[-1]: print(",")
+        if l != gvar_list_all[-1]: print(",")
         else: print("\n};\n")
 
 def print_memberinfo():
@@ -108,10 +108,10 @@ def write_infoc():
     info_c = []
     info_c.append("#include \"" + WRITEFILE2 +"\"") 
     info_c.append("") 
-    info_c.append("struct globalvar globalvars[" + str(len(globalvar_list_all)) + "] = {")
-    for l in globalvar_list_all:
+    info_c.append("struct gvarinfo gvars[" + str(len(gvar_list_all)) + "] = {")
+    for l in gvar_list_all:
         s = "    {" + str(l[0]) + ", " + "\"" + l[1] + "\"" + ", " + l[2] + "}"
-        if l != globalvar_list_all[-1]:
+        if l != gvar_list_all[-1]:
             info_c.append(s + ",")
         else:
             info_c.append(s)
@@ -156,14 +156,14 @@ def write_infoh():
     info_h.append("#ifndef _" + WRITEFILE2.replace(".", "_").upper())
     info_h.append("#define _" + WRITEFILE2.replace(".", "_").upper())
     info_h.append("")
-    info_h.append("struct globalvar {")
-    info_h.append("    int typenum;")
+    info_h.append("struct gvarinfo {")
+    info_h.append("    int tidx;")
     info_h.append("    char* name;")
     info_h.append("    long addr;")
     info_h.append("};")
     info_h.append("")
     info_h.append("struct memberinfo {")
-    info_h.append("    int typenum;")
+    info_h.append("    int tidx;")
     info_h.append("    char* name;")
     info_h.append("    long offset;")
     info_h.append("};")
@@ -190,7 +190,7 @@ def write_infoh():
     info_h.append("    };")
     info_h.append("};")
     info_h.append("")
-    info_h.append("extern struct globalvar globalvars[" + str(len(globalvar_list_all)) + "];")
+    info_h.append("extern struct gvarinfo gvars[" + str(len(gvar_list_all)) + "];")
     for l in struct_list_all:
         info_h.append("extern struct memberinfo " + l[0] + "[" + str(len(l)-1) + "];")
     info_h.append("extern struct typeinfo types[" + str(len(datatype_dict)) + "];")
@@ -383,13 +383,13 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
 
             elif re.match(" *\[.*\] addr", line) and TYPE_GET:
                 addr = getaddr(line)
-                globalvarname = getglobalvarname(line)
-                globalvar_list = [offset_num_dict[vartype_offset], globalvarname, addr]
-                globalvar_list_all.append(globalvar_list)
+                gvarname = getgvarname(line)
+                gvar_list = [offset_num_dict[vartype_offset], gvarname, addr]
+                gvar_list_all.append(gvar_list)
                 TYPE_GET = 0
                 continue
 
-#print_globalvar()
+#print_gvar()
 #print_memberinfo()
 #print_typeinfo()
 
@@ -403,6 +403,6 @@ print(READFILE)
 print("├─>" + WRITEFILE1)
 print("└─>" + WRITEFILE2)
 #pprint.pprint(struct_list_all)
-#pprint.pprint(globalvar_list_all)
+#pprint.pprint(gvar_list_all)
 
 
