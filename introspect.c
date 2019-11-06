@@ -430,7 +430,7 @@ obj* get_pointer(obj* o){
 }
 
 obj* get_array(obj* o){
-  return make_res(o->tidx, read_mem(8, o->data));
+  return make_res(o->tidx, o->data);
 }
 
 obj* get_struct(obj* o){
@@ -580,84 +580,61 @@ obj* prim_member_indirect(obj* env, obj* list){
   return get_member_indirect(stru, list->cdr->car);
 }
 
-
-obj* prim_printp(obj* env, obj* list){
-  obj* o = eval(env, list->car);
-
-  if(!o){
-    perror("[prim_printp] no pointer var");
-    return Nil;
-  }
-
+obj* printpointer(obj* o){
   int tidx = o->tidx;
-  if(types[tidx].kind != pointer){
-    perror("[prim_printp] not pointer");
-    return Nil;
+  int i, j, size=256;
+  long data, addr = o->data;
+  char *str = (char*)malloc(sizeof(char)*size);
+  
+  for(i=1;i<types[tidx].pcount;i++){
+    addr = read_mem(8, addr);
   }
   
-  int i, j;
-  long addr = o->data;
-  long data;
-  int pcount = types[tidx].pcount;
-
-  if(strcmp(types[tidx].name, "char") == 0){
-    int size=256;
-    char *str = (char*)malloc(sizeof(char)*size);
-    for(i=1;i<pcount;i++){
-      addr = read_mem(8, addr);
-    }
-    for(i=0;i<size;i+=sizeof(long)){
-      data = read_mem(8, addr+i);
-      memcpy(str+i, &data, sizeof(long));
-      for(j=0;j<sizeof(long);j++){
-	if(str[i+j] == '\0'){
-	  printf("%s\n", str);
-	  //return make_gvar(tidx, (long)str);
-	  return Nil;
-	}
+  for(i=0;i<size;i+=sizeof(long)){
+    data = read_mem(8, addr+i);
+    memcpy(str+i, &data, sizeof(long));
+    for(j=0;j<sizeof(long);j++){
+      if(str[i+j] == '\0'){
+	printf("%s\n", str);
+	return Nil;
       }
-    } 
-  }
-  else{
-    perror("[prim_printp] not defined");
-    return Nil;
-  }
+    }
+  } 
 }
 
-// (printp <array var>)
-obj* prim_printa(obj* env, obj* list){
+obj* printarray(obj* o){
+  int i, tidx = o->tidx;
+  long data, addr = o->data;
+  int arraysize = types[tidx].arraysize;
+  
+  char* str = (char*)malloc(sizeof(char)*types[tidx].arraysize);
+  for(i=0;i<arraysize;i+=sizeof(long)){
+    data = read_mem(8, addr+i);
+    memcpy(str+i, &data, sizeof(long));
+  }
+  printf("%s\n", str);
+  return Nil;
+}
+
+obj* prim_printstring(obj* env, obj* list){
   obj* o = eval(env, list->car);
 
-  if(!o){
-    perror("[prim_printp] no pointer var");
+  if(o->type != GVAR && o->type != RES){
+    perror("[prim_printstring] malformed printstring");
     return Nil;
   }
 
   int tidx = o->tidx;
-  if(types[tidx].kind != array){
-    perror("[prim_printp] not pointer");
-    return Nil;
+  if(types[tidx].kind == pointer && strcmp(types[tidx].name, "char") == 0){
+    return printpointer(o);
   }
-  
-  int i;
-  long data;
-  long addr = o->data;
-  int arraysize = types[tidx].arraysize;
-  
-  if(strcmp(types[tidx].name, "char") == 0){
-    char* str = (char*)malloc(sizeof(char)*types[tidx].arraysize);
-    for(i=0;i<arraysize;i+=sizeof(long)){
-      data = read_mem(8, addr+i);
-      memcpy(str+i, &data, sizeof(long));
-    }
-    printf("%s\n", str);
-    //return make_gvar(tidx, (long)str);
-    return Nil;
+  else if(types[tidx].kind == array && strcmp(types[tidx].name, "char") == 0){
+    return printarray(o);
   }
   else{
-    perror("[prim_printa] not defined");
-    return Nil;
+    perror("[prim_printstring] takes only pointer or array");
   }
+  
 }
 
 // (< <value> <value>)
@@ -679,13 +656,13 @@ obj* prim_lt(obj *env, obj *list) {
 obj* prim_gt(obj *env, obj *list) {
   obj *args = eval_list(env, list);
   if(length(args) != 2){
-    perror("[prim_lt] malformed <");
+    perror("[prim_gt] malformed >");
     return Nil;
   }
   obj *x = args->car;
   obj *y = args->cdr->car;
   if(x->type != INT || y->type != INT){
-    perror("[prim_lt] < takes only numbers");
+    perror("[prim_gt] < takes only numbers");
   }
   return x->value > y->value ? True : Nil;
 }
@@ -818,8 +795,7 @@ void define_primitive(obj* env){
   add_primitive(env, "define", prim_define);
   add_primitive(env, ".", prim_member_direct);
   add_primitive(env, "->", prim_member_indirect);
-  add_primitive(env, "printp", prim_printp);
-  add_primitive(env, "printa", prim_printa);
+  add_primitive(env, "printstring", prim_printstring);
   add_primitive(env, "<", prim_lt);
   add_primitive(env, ">", prim_gt);
   add_primitive(env, "if", prim_if);

@@ -32,6 +32,8 @@ breakを追加
 
 printを追加
 
+printstringを追加
+
 ====
 
 print-string追加
