@@ -675,6 +675,21 @@ obj* prim_lt(obj *env, obj *list) {
   return x->value < y->value ? True : Nil;
 }
 
+// (> <value> <value>)
+obj* prim_gt(obj *env, obj *list) {
+  obj *args = eval_list(env, list);
+  if(length(args) != 2){
+    perror("[prim_lt] malformed <");
+    return Nil;
+  }
+  obj *x = args->car;
+  obj *y = args->cdr->car;
+  if(x->type != INT || y->type != INT){
+    perror("[prim_lt] < takes only numbers");
+  }
+  return x->value > y->value ? True : Nil;
+}
+
 // (if expr expr expr ...)
 obj* prim_if(obj *env, obj *list) {
   if (length(list) < 2){
@@ -806,6 +821,7 @@ void define_primitive(obj* env){
   add_primitive(env, "printp", prim_printp);
   add_primitive(env, "printa", prim_printa);
   add_primitive(env, "<", prim_lt);
+  add_primitive(env, ">", prim_gt);
   add_primitive(env, "if", prim_if);
   add_primitive(env, "while", prim_while);
   add_primitive(env, "=", prim_num_eq);
