@@ -35,10 +35,11 @@ struct typeinfo {
     };
 };
 
-extern struct gvarinfo gvars[10];
+extern struct gvarinfo gvars[14];
 extern struct memberinfo person[7];
 extern struct memberinfo kyuuyo[4];
 extern struct memberinfo syain_dt[6];
-extern struct typeinfo types[26];
+extern struct memberinfo cell[2];
+extern struct typeinfo types[27];
 
 #endif

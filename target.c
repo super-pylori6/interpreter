@@ -5,11 +5,12 @@
 
 int ggg = 4;
 long hhh = 6;
-int* p;
-int** q = &p;
+int* p = NULL;
+int* q = NULL;
 char c = 'x';
 char ca[] = "hello world!";
 char* cp = "hello world!";
+
 
 int add(int x, int y){
   return x+y;
@@ -61,6 +62,27 @@ struct syain_dt tokyo = {
   {20, 5, 2, 1},
   &tanaka
 };
+
+struct cell {
+  int val;
+  struct cell* next;
+};
+
+struct cell c1;
+
+struct cell c3 = {
+  3, &c1
+};
+
+struct cell c2 = {
+  2, &c3
+};
+
+struct cell c1 = {
+  1, &c2
+};
+
+struct cell* top = &c1;
 
 int main(void){
   int iii = 12;

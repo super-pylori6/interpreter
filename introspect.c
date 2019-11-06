@@ -12,6 +12,10 @@
 #include <sys/wait.h> // waitpid()
 #endif
 
+#ifdef PTRACE_ON
+pid_t pid;
+#endif
+
 #define SYMBOL_MAX_LEN 100
 
 enum {
@@ -23,6 +27,7 @@ enum {
   FUNC,
   ENV,
   GVAR,
+  RES,
   RPAREN,
   TRUE,
   NIL,
@@ -66,11 +71,12 @@ obj* Rparen = &(obj){RPAREN};
 obj* True = &(obj){TRUE};
 obj* Nil = &(obj){NIL};
 
+// envで一括管理すれば消せそう
 obj *symbol_table;
 
-pid_t pid;
-
 obj* get_gvar(obj* o);
+
+
 
 
 //================
@@ -120,10 +126,19 @@ obj* make_env(obj* vars, obj* up){
   return tmp;
 }
 
-// 対象プロセスのグローバル変数情報を格納するobjを定義する
+// 対象のグローバル変数情報を格納するobjを定義する
 obj* make_gvar(int tidx, long data){
   obj* tmp = (obj*)malloc(sizeof(obj));
   tmp->type = GVAR;
+  tmp->tidx = tidx;
+  tmp->data = data;
+  return tmp;
+}
+
+// 対象のグローバル変数情報の取得結果を格納するobjを定義する
+obj* make_res(int tidx, long data){
+  obj* tmp = (obj*)malloc(sizeof(obj));
+  tmp->type = RES;
   tmp->tidx = tidx;
   tmp->data = data;
   return tmp;
@@ -205,7 +220,7 @@ obj* read_symbol(char c){
   int len = 1;
   while(isalnum(peek()) || strchr(symbol_chars, peek())){
     if(SYMBOL_MAX_LEN <= len){
-      printf("[read_symbol] too long symbol name");
+      perror("[read_symbol] too long symbol name");
       return NULL;
     }
     symbol[len++] = getchar();
@@ -232,16 +247,6 @@ void quit(void){
   int ret;
 
 #ifdef PTRACE_ON
-  ret = ptrace(PTRACE_CONT, pid, NULL, NULL);
-  
-  if(ret != 0){
-    perror("[main] CONT error\n");
-    exit(EXIT_FAILURE);
-  }
-
-  kill(pid, SIGSTOP);
-  waitpid(pid, NULL, 0);
-
   ret = ptrace(PTRACE_DETACH, pid, NULL, NULL);
 #endif
   
@@ -298,6 +303,9 @@ obj* read(void){
     }
   }
 }
+
+
+
 
 //================
 // eval
@@ -364,9 +372,10 @@ obj* eval(obj* env, obj* o){
   case INT:
   case STR:
   case PRIM:
+  case GVAR:
+  case RES:
   case TRUE:
   case NIL:
-  case GVAR:
     return o;
   case SYM:{
     obj* list_sym = lookup(env, o);
@@ -396,12 +405,12 @@ obj* eval(obj* env, obj* o){
   }
 }
 
+
+
+
 //================
 // introspect
 //================
-
-
-// メンバ取得処理を作成する
 
 long read_mem(int size, long addr){
 #ifdef PTRACE_ON
@@ -410,22 +419,19 @@ long read_mem(int size, long addr){
 }
 
 obj* get_base(obj* o){
-  int tidx = o->tidx;
-  long data = read_mem(8, o->data);
-  return make_gvar(tidx, data);
+  return make_res(o->tidx, read_mem(8, o->data));
 }
 
 obj* get_pointer(obj* o){
-  int tidx = o->tidx;
-  return make_gvar(tidx, o->data);
+  return make_res(o->tidx, read_mem(8, o->data));
 }
 
 obj* get_array(obj* o){
-  return get_pointer(o);
+  return make_res(o->tidx, read_mem(8, o->data));
 }
 
 obj* get_struct(obj* o){
-  return get_pointer(o);
+  return make_res(o->tidx, o->data);
 }
 
 obj* get_gvar(obj* o){
@@ -444,11 +450,12 @@ obj* get_gvar(obj* o){
   }
   else{
     perror("[get_gvar] not defined");
+    return NULL;
   }
 }
 
 int search_memb(char* memb, int tidx){
-  for(int i=0;types[tidx].memnum;i++){
+  for(int i=0;i<types[tidx].memnum;i++){
     if(strcmp(memb, types[tidx].mem[i].name) == 0){
       return i;
     }
@@ -483,7 +490,6 @@ obj* prim_add(obj* env, obj* list){
 }
 
 // (define <symbol> expr)
-// グローバル変数も上書きできてしまう
 obj* prim_define(obj* env, obj* list){
   if (length(list) != 2 || list->car->type != SYM){
     perror("[prim_define] Malformed define");
@@ -519,7 +525,8 @@ obj* get_member_direct(obj* stru, obj* memb){
 
 obj* get_member_indirect(obj* poin, obj* memb){
   int tidx = types[poin->tidx].saki;
-  long data = read_mem(8, poin->data);
+  //long data = read_mem(8, poin->data);
+  long data = poin->data;
 
   return get_member_direct(make_gvar(tidx, data), memb);
 }
@@ -533,7 +540,7 @@ obj* prim_member_direct(obj* env, obj* list){
     return Nil;
   }
   
-  if(stru->type != GVAR){
+  if(stru->type != GVAR && stru->type != RES){
     perror("[prim_member_direct] not gvar");
     return Nil;
   }
@@ -556,7 +563,7 @@ obj* prim_member_indirect(obj* env, obj* list){
     return Nil;
   }
 
-  if(stru->type != GVAR){
+  if(stru->type != GVAR && stru->type != RES){
     perror("[prim_member_direct] not gvar");
     return Nil;
   }
@@ -706,10 +713,44 @@ obj* prim_num_eq(obj *env, obj *list) {
   obj* values = eval_list(env, list);
   obj* x = values->car;
   obj* y = values->cdr->car;
-  if (x->type != INT || y->type != INT){
-    perror("[prim_num_eq] = only takes numbers");
+
+  if (x->type == INT && y->type == INT){
+    return x->value == y->value ? True : Nil;
   }
-  return x->value == y->value ? True : Nil;
+  else if((x->type == GVAR || x->type == RES) && (y->type == GVAR || y->type == RES)){
+    return x->data == y->data ? True : Nil;
+  }
+  else{
+    perror("[prim_num_eq] = only takes numbers");
+    return Nil;    
+  }
+}
+
+// (eq expr expr)
+obj *prim_eq(obj *env, obj *list) {
+  if (length(list) != 2){
+    perror("[prim_eq] Malformed eq");
+    return Nil;
+  }
+  obj *values = eval_list(env, list);
+  return values->car == values->cdr->car ? True : Nil;
+}
+
+obj* prim_deref(obj* env, obj* list){
+  obj* o = eval(env, list->car);
+  
+  if(!o){
+    perror("[prim_deref] no pointer var");
+    return Nil;
+  }
+  
+  int tidx = o->tidx;
+  if(types[tidx].kind != pointer){
+    perror("[prim_deref] not pointer");
+    return Nil;
+  }
+  
+  return make_res(types[tidx].saki, read_mem(8, o->data));
 }
 
 void add_variable(obj* env, obj* sym, obj* val) {
@@ -736,6 +777,8 @@ void define_primitive(obj* env){
   add_primitive(env, "if", prim_if);
   add_primitive(env, "while", prim_while);
   add_primitive(env, "=", prim_num_eq);
+  add_primitive(env, "eq", prim_eq);
+  add_primitive(env, "deref", prim_deref);
 }
 
 
@@ -803,11 +846,11 @@ void print_pointer(obj* o){
 }
 
 void print_array(obj* o){
-  print_pointer(o);
+  printf("0x%lx : %s[]", o->data, types[o->tidx].name);
 }
 
 void print_struct(obj* o){
-  print_pointer(o);
+  printf("0x%lx : %s", o->data, types[o->tidx].name);
 }
 
 void print_gvar(obj* o){
@@ -863,6 +906,9 @@ void print(obj* o){
   case GVAR:
     print_gvar(o);
     break;
+  case RES:
+    print_gvar(o);
+    break;
   case TRUE:
     printf("TRUE");
     break;
@@ -881,8 +927,10 @@ int main(int argc, char **argv){
     perror("[main] argc error");
     return 0;
   }
+#ifdef PTRACE_ON
   pid = atoi(argv[1]);
-    
+#endif
+  
   symbol_table = Nil;
   obj* env = make_env(Nil, Nil);
   define_primitive(env);
