@@ -378,6 +378,7 @@ obj* eval(obj* env, obj* o){
   case RES:
   case TRUE:
   case NIL:
+  case BREAK:
     return o;
   case SYM:{
     obj* list_sym = lookup(env, o);
@@ -715,7 +716,8 @@ obj* prim_while(obj *env, obj *list) {
   obj* exprs = Nil;
   while (eval(env, cond) != Nil) {
     exprs = list->cdr;
-    if(break_in(eval_list(env, exprs))){
+    obj* ret = eval_list(env, exprs);
+    if(break_in(ret)){
       break;
     }
   }
@@ -776,6 +778,13 @@ obj* prim_break(obj* env, obj* list){
   return Break;
 }
 
+// (print expr)
+obj *prim_print(obj *env, obj *list){
+    obj* tmp = list->car;
+    print(eval(env, tmp));
+    return Nil;
+}
+
 void add_variable(obj* env, obj* sym, obj* val) {
     obj* vars = env->vars;
     obj* tmp = make_list(make_list(sym, val), vars);
@@ -803,6 +812,7 @@ void define_primitive(obj* env){
   add_primitive(env, "eq", prim_eq);
   add_primitive(env, "deref", prim_deref);
   add_primitive(env, "break", prim_break);
+  add_primitive(env, "print", prim_print);
 }
 
 
@@ -947,9 +957,7 @@ void print(obj* o){
 }
 
 
-int main(int argc, char **argv){
-  int ret = 0;
-  
+int main(int argc, char **argv){  
   if(argc != 2){
     perror("[main] argc error");
     return 0;

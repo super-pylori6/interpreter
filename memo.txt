@@ -30,18 +30,16 @@ $taskを実行するともう一度評価されてしまい値がおかしくな
 
 breakを追加
 
+printを追加
+
 ====
 
 print-string追加
 
-(deref (-> (-> (-> top next) next) next))
-
 (define $task top)
-(-> $task val)
-(deref (-> $task next))
+(print (-> $task val))
 (define $task (-> $task next))
-
-(define $task ggg)
+(if (= $task top) (break))
 
 (define $task top)
-(while 1 (-> $task val))
+(while 1 (print (-> $task val)) (define $task (-> $task next)) (if (= $task top) (break)))
