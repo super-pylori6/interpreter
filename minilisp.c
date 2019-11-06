@@ -927,6 +927,18 @@ static Obj *prim_num_eq(void *root, Obj **env, Obj **list) {
     return x->value == y->value ? True : Nil;
 }
 
+// (= <integer> <integer>)
+static Obj *prim_num_eq(void *root, Obj **env, Obj **list) {
+    if (length(*list) != 2)
+        error("Malformed =");
+    Obj *values = eval_list(root, env, list);
+    Obj *x = values->car;
+    Obj *y = values->cdr->car;
+    if (x->type != TINT || y->type != TINT)
+        error("= only takes numbers");
+    return x->value == y->value ? True : Nil;
+}
+
 // (eq expr expr)
 static Obj *prim_eq(void *root, Obj **env, Obj **list) {
     if (length(*list) != 2)

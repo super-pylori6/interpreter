@@ -21,26 +21,14 @@ define の頭文字を$に限定する
 
 ifdefでptrace処理を消せるようにする
 
-evalのSYM処理の中でread_memを呼んでたが
-GVAR処理でread_memを呼ぶように修正する
-- topの場合
-- topの中身が出力されるべき
-- topはシンボル
-- (define $task top)の場合
-- $taskにはtop自体のアドレスが格納されるベき
-- もしくは$taskと入力した時は
-
-- 入力：GVAR名のみ
-- 出力：GVARのアドレス
-- 入力：(print** GVAR)
-- 出力：GVARの中身
-
 現在の問題
 (define $task ggg)を実行するとgggが評価された値が$taskに格納される
 $taskを実行するともう一度評価されてしまい値がおかしくなる
 
+メモリ内容の取得結果を表すtype RESを追加
+- それに伴いtype判定などを修正
 
-
+breakを追加
 
 ====
 
@@ -54,3 +42,6 @@ print-string追加
 (define $task (-> $task next))
 
 (define $task ggg)
+
+(define $task top)
+(while 1 (-> $task val))

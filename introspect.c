@@ -31,6 +31,7 @@ enum {
   RPAREN,
   TRUE,
   NIL,
+  BREAK,
 };
 
 struct obj;
@@ -70,12 +71,13 @@ typedef struct obj {
 obj* Rparen = &(obj){RPAREN};
 obj* True = &(obj){TRUE};
 obj* Nil = &(obj){NIL};
+obj* Break = &(obj){BREAK};
 
 // envで一括管理すれば消せそう
 obj *symbol_table;
 
 obj* get_gvar(obj* o);
-
+void print(obj* o);
 
 
 
@@ -600,7 +602,7 @@ obj* prim_printp(obj* env, obj* list){
   if(strcmp(types[tidx].name, "char") == 0){
     int size=256;
     char *str = (char*)malloc(sizeof(char)*size);
-    for(i=0;i<pcount;i++){
+    for(i=1;i<pcount;i++){
       addr = read_mem(8, addr);
     }
     for(i=0;i<size;i+=sizeof(long)){
@@ -688,6 +690,21 @@ obj* prim_if(obj *env, obj *list) {
   return els == Nil ? Nil : progn(env, els);
 }
 
+// リストがBreakを含むか判定
+int break_in(obj* o){
+  if(o->type != LIST){
+    perror("[get_end] not list");
+    return 0;
+  }
+  while(o != Nil){
+    if(o->car == Break){
+      return 1;
+    }
+    o = o->cdr;
+  }
+  return 0;
+}
+
 // (while cond expr ...)
 obj* prim_while(obj *env, obj *list) {
   if (length(list) < 2){
@@ -698,9 +715,10 @@ obj* prim_while(obj *env, obj *list) {
   obj* exprs = Nil;
   while (eval(env, cond) != Nil) {
     exprs = list->cdr;
-    eval_list(env, exprs);
+    if(break_in(eval_list(env, exprs))){
+      break;
+    }
   }
-  //printf("while\n");
   return Nil;
 }
 
@@ -753,6 +771,11 @@ obj* prim_deref(obj* env, obj* list){
   return make_res(types[tidx].saki, read_mem(8, o->data));
 }
 
+// (break)
+obj* prim_break(obj* env, obj* list){
+  return Break;
+}
+
 void add_variable(obj* env, obj* sym, obj* val) {
     obj* vars = env->vars;
     obj* tmp = make_list(make_list(sym, val), vars);
@@ -779,6 +802,7 @@ void define_primitive(obj* env){
   add_primitive(env, "=", prim_num_eq);
   add_primitive(env, "eq", prim_eq);
   add_primitive(env, "deref", prim_deref);
+  add_primitive(env, "break", prim_break);
 }
 
 
@@ -911,6 +935,9 @@ void print(obj* o){
     break;
   case TRUE:
     printf("TRUE");
+    break;
+  case BREAK:
+    printf("BREAK");
     break;
   default:
     printf("[print] not defined");
