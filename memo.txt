@@ -34,6 +34,14 @@ GVAR処理でread_memを呼ぶように修正する
 - 出力：GVARのアドレス
 - 入力：(print** GVAR)
 - 出力：GVARの中身
+
+現在の問題
+(define $task ggg)を実行するとgggが評価された値が$taskに格納される
+$taskを実行するともう一度評価されてしまい値がおかしくなる
+
+
+
+
 ====
 
 print-string追加
@@ -44,3 +52,5 @@ print-string追加
 (-> $task val)
 (deref (-> $task next))
 (define $task (-> $task next))
+
+(define $task ggg)
