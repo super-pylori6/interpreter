@@ -42,6 +42,8 @@ printarrayを追加
 baseとstructはそのまま辞書に追加していく
 arrayとpointerは参照する
 
+型名削除
+
 ====
 
 print-string追加

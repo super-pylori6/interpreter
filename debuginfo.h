@@ -41,7 +41,6 @@ enum type {
 
 struct typeinfo {
     enum type kind;
-    char* name;
     int tbit;
     int bytesize;
     union {

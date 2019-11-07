@@ -150,15 +150,15 @@ def write_infoc():
     info_c.append("struct typeinfo types[" + str(len(datatype_dict)) + "] = {")
     for k, v in datatype_dict.items():
         if v[0] == "base":
-            s = "    {" + v[0] + ", \"" + v[1] + "\", " + type_bit_dict[k] + ", " + str(v[2]) + "}"
+            s = "    {" + v[0] + ", " + type_bit_dict[k] + ", " + str(v[2]) + "}"
         elif v[0] == "pointer":
-            s = "    {" + v[0] + ", \"" + v[1] + "\", " + type_bit_dict[k] + ", " + str(v[2]) + ", .saki=" + str(offset_num_dict[v[3]]) + ", .pcount=" + str(v[4]) + "}"
+            s = "    {" + v[0] + ", " + type_bit_dict[k] + ", " + str(v[2]) + ", .saki=" + str(offset_num_dict[v[3]]) + ", .pcount=" + str(v[4]) + "}"
         elif v[0] == "array":
-            s = "    {" + v[0] + ", \"" + v[1] + "\", " + type_bit_dict[k] + ", " + str(v[2]) + ", .saki=" + str(offset_num_dict[v[3]]) + ", .arraysize=" + str(v[4]) + "}"
+            s = "    {" + v[0] + ", " + type_bit_dict[k] + ", " + str(v[2]) + ", .saki=" + str(offset_num_dict[v[3]]) + ", .arraysize=" + str(v[4]) + "}"
         elif v[0] == "structure":
             for l in struct_list_all:
                 if l[0] == v[1].split(" ")[1]:
-                    s = "    {" + v[0] + ", \"" + v[1] + "\", " + type_bit_dict[k] + ", " + str(v[2]) + ", .memnum=" + str(len(l)-1) + ", .mem=" + v[1].split(" ")[1] + "}"
+                    s = "    {" + v[0] + ", " + type_bit_dict[k] + ", " + str(v[2]) + ", .memnum=" + str(len(l)-1) + ", .mem=" + v[1].split(" ")[1] + "}"
         if k != list(datatype_dict.keys())[-1]:
             info_c.append(s + ",")
         else:
@@ -202,7 +202,6 @@ def write_infoh():
     info_h.append("")
     info_h.append("struct typeinfo {")
     info_h.append("    enum type kind;")
-    info_h.append("    char* name;")
     info_h.append("    int tbit;")
     info_h.append("    int bytesize;")
     info_h.append("    union {")

@@ -80,37 +80,6 @@ obj *symbol_table;
 obj* get_gvar(obj* o);
 void print(obj* o);
 
-/*
-char* get_typename(int tbit){
-  switch(tbit){
-  case _LONG_UNSIGNED_INT:
-    return "long unsigned int";
-  case _UNSIGNED_CHAR:
-    return "unsigned char";
-  case _SHORT_UNSIGNED_INT:
-    return "short unsigned int";
-  case _UNSIGNED_INT:
-    return "unsigned int";
-  case _SIGNED_CHAR:
-    return "signed char";
-  case _SHORT_INT:
-    return "short int";
-  case _INT:
-    return "int";
-  case _LONG_INT:
-    return "long int";
-  case _FLOAT:
-    return "float";
-  case _DOUBLE:
-    return "double";
-  case _CHAR:
-    return "char";
-  default:
-    return "";
-  }      
-}
-*/
-
 //================
 // constructor
 //================
@@ -794,10 +763,10 @@ obj* prim_printstring(obj* env, obj* list){
   }
   
   int tidx = o->tidx;
-  if(types[tidx].kind == pointer && strcmp(types[tidx].name, "char") == 0){
+  if(types[tidx].kind == pointer && (types[tidx].tbit & _CHAR)){
     return printstringp(o);
   }
-  else if(types[tidx].kind == array && strcmp(types[tidx].name, "char") == 0){
+  else if(types[tidx].kind == array && (types[tidx].tbit & _CHAR)){
     return printstringa(o);
   }
   else{
