@@ -87,6 +87,7 @@ struct cell* top = &c1;
 int main(void){
   int iii = 12;
   double ddd = 34.5;
+  float fff = 6.7;
   struct syain_dt syomu[20];
 
   while(1){

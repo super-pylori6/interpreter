@@ -20,6 +20,8 @@ datatype_dict = {}
 struct_list_all = []
 gvar_list_all = []
 offset_num_dict = {}
+type_bit_dict = {}
+p_type_bit_dict = {}
 
 READFILE = "target.debug"
 WRITEFILE1 = "debuginfo.c"
@@ -107,7 +109,8 @@ def print_typeinfo():
 def write_infoc():
     info_c = []
     info_c.append("#include \"" + WRITEFILE2 +"\"") 
-    info_c.append("") 
+    info_c.append("")
+        
     info_c.append("struct gvarinfo gvars[" + str(len(gvar_list_all)) + "] = {")
     for l in gvar_list_all:
         s = "    {" + str(l[0]) + ", " + "\"" + l[1] + "\"" + ", " + l[2] + "}"
@@ -132,15 +135,15 @@ def write_infoc():
     info_c.append("struct typeinfo types[" + str(len(datatype_dict)) + "] = {")
     for k, v in datatype_dict.items():
         if v[0] == "base":
-            s = "    {" + v[0] + ", \"" + v[1] + "\", " + str(v[2]) + "}"
+            s = "    {" + v[0] + ", \"" + v[1] + "\", " + type_bit_dict[k] + ", " + str(v[2]) + "}"
         elif v[0] == "pointer":
-            s = "    {" + v[0] + ", \"" + v[1] + "\", " + str(v[2]) + ", .saki=" + str(offset_num_dict[v[3]]) + ", .pcount=" + str(v[4]) + "}"
+            s = "    {" + v[0] + ", \"" + v[1] + "\", " + type_bit_dict[k] + ", " + str(v[2]) + ", .saki=" + str(offset_num_dict[v[3]]) + ", .pcount=" + str(v[4]) + "}"
         elif v[0] == "array":
-            s = "    {" + v[0] + ", \"" + v[1] + "\", " + str(v[2]) + ", .saki=" + str(offset_num_dict[v[3]]) + ", .arraysize=" + str(v[4]) + "}"
+            s = "    {" + v[0] + ", \"" + v[1] + "\", " + type_bit_dict[k] + ", " + str(v[2]) + ", .saki=" + str(offset_num_dict[v[3]]) + ", .arraysize=" + str(v[4]) + "}"
         elif v[0] == "structure":
             for l in struct_list_all:
                 if l[0] == v[1].split(" ")[1]:
-                    s = "    {" + v[0] + ", \"" + v[1] + "\", " + str(v[2]) + ", .memnum=" + str(len(l)-1) + ", .mem=" + v[1].split(" ")[1] + "}"
+                    s = "    {" + v[0] + ", \"" + v[1] + "\", " + type_bit_dict[k] + ", " + str(v[2]) + ", .memnum=" + str(len(l)-1) + ", .mem=" + v[1].split(" ")[1] + "}"
         if k != list(datatype_dict.keys())[-1]:
             info_c.append(s + ",")
         else:
@@ -156,6 +159,12 @@ def write_infoh():
     info_h.append("#ifndef _" + WRITEFILE2.replace(".", "_").upper())
     info_h.append("#define _" + WRITEFILE2.replace(".", "_").upper())
     info_h.append("")
+
+    for k in p_type_bit_dict.keys():
+        s = "#define _" + datatype_dict[k][1].upper().replace(' ', '_') + " " * (len("LONG_LONG_UNSIGNED_INT") - len(datatype_dict[k][1]) + 1)+ p_type_bit_dict[k]
+        info_h.append(s)
+    info_h.append("")
+    
     info_h.append("struct gvarinfo {")
     info_h.append("    int tidx;")
     info_h.append("    char* name;")
@@ -178,6 +187,7 @@ def write_infoh():
     info_h.append("struct typeinfo {")
     info_h.append("    enum type kind;")
     info_h.append("    char* name;")
+    info_h.append("    int tbit;")
     info_h.append("    int bytesize;")
     info_h.append("    union {")
     info_h.append("        int saki; //pointer")
@@ -302,6 +312,23 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
             continue
 #pprint.pprint(datatype_dict)
 
+# 型とビットの辞書作成
+for i, k in enumerate(datatype_dict.keys()):
+    if datatype_dict[k][0] == "base":
+        type_bit_dict[k] = p_type_bit_dict[k] = hex(2 ** i)
+    elif datatype_dict[k][0] == "structure":
+        type_bit_dict[k] = p_type_bit_dict[k] = hex(2 ** i)
+
+for i, k in enumerate(datatype_dict.keys()):
+    if datatype_dict[k][0] == "pointer":
+        type_bit_dict[k] = type_bit_dict[datatype_dict[k][1]]
+    elif datatype_dict[k][0] == "array":
+        type_bit_dict[k] = type_bit_dict[datatype_dict[k][1]]
+    elif datatype_dict[k][0] == "typedef":
+        type_bit_dict[k] = type_bit_dict[datatype_dict[k][1]]
+
+#pprint.pprint(type_bit_dict)
+        
 # 辞書の更新
 for k in datatype_dict.keys():
     if datatype_dict[k][0] == "typedef":

@@ -913,6 +913,8 @@ void define_gvar(obj* env){
 // print
 //================
 
+#define  PR_FMT(f,x)  printf("%"#f, (x))
+
 void print(obj* o);
 
 // リストを表示する
@@ -928,31 +930,37 @@ void print_list(obj* o){
 }
 
 void print_base(obj* o){
-  if(strcmp(types[o->tidx].name, "long unsigned int") == 0){
+  if(types[o->tidx].tbit & _LONG_UNSIGNED_INT){
     printf("%lu : %s", (long unsigned int)o->data, types[o->tidx].name);
   }
-  else if(strcmp(types[o->tidx].name, "short unsigned int") == 0){
-    printf("%u : %s", (short unsigned int)o->data, types[o->tidx].name);
+  else if(types[o->tidx].tbit & _UNSIGNED_CHAR){
+    printf("%hhu : %s", (unsigned char)o->data, types[o->tidx].name);
   }
-  else if(strcmp(types[o->tidx].name, "unsigned int") == 0){
+  else if(types[o->tidx].tbit & _SHORT_UNSIGNED_INT){
+    printf("%hu : %s", (short unsigned int)o->data, types[o->tidx].name);
+  }
+  else if(types[o->tidx].tbit & _UNSIGNED_INT){
     printf("%u : %s", (unsigned int)o->data, types[o->tidx].name);
   }
-  else if(strcmp(types[o->tidx].name, "short int") == 0){
+  else if(types[o->tidx].tbit & _SIGNED_CHAR){
+    printf("%hhd : %s", (signed char)o->data, types[o->tidx].name);
+  }
+  else if(types[o->tidx].tbit & _SHORT_INT){
     printf("%d : %s", (short int)o->data, types[o->tidx].name);
   }
-  else if(strcmp(types[o->tidx].name, "int") == 0){
+  else if(types[o->tidx].tbit & _INT){
     printf("%d : %s", (int)o->data, types[o->tidx].name);
   }
-  else if(strcmp(types[o->tidx].name, "long int") == 0){
+  else if(types[o->tidx].tbit & _LONG_INT){
     printf("%ld : %s", o->data, types[o->tidx].name);
   }
-  else if(strcmp(types[o->tidx].name, "float") == 0){
+  else if(types[o->tidx].tbit & _FLOAT){
     printf("%f : %s", (float)o->data, types[o->tidx].name);
   }
-  else if(strcmp(types[o->tidx].name, "double") == 0){
+  else if(types[o->tidx].tbit & _DOUBLE){
     printf("%lf : %s", (double)o->data, types[o->tidx].name);
   }
-  else if(strcmp(types[o->tidx].name, "char") == 0){
+  else if(types[o->tidx].tbit & _CHAR){
     printf("%c : %s", (char)o->data, types[o->tidx].name);
   }
   else{

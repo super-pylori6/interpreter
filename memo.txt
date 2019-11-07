@@ -38,6 +38,9 @@ printstringを追加
 printarrayを追加
 
 型名をビットで表現する
+- read_debug.pyを修正
+baseとstructはそのまま辞書に追加していく
+arrayとpointerは参照する
 
 ====
 
