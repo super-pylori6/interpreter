@@ -14,6 +14,7 @@
 
 #ifdef PTRACE_ON
 pid_t pid;
+#define SIZE 8
 #endif
 
 #define SYMBOL_MAX_LEN 100
@@ -422,11 +423,11 @@ long read_mem(int size, long addr){
 }
 
 obj* get_base(obj* o){
-  return make_res(o->tidx, read_mem(8, o->data));
+  return make_res(o->tidx, read_mem(SIZE, o->data));
 }
 
 obj* get_pointer(obj* o){
-  return make_res(o->tidx, read_mem(8, o->data));
+  return make_res(o->tidx, read_mem(SIZE, o->data));
 }
 
 obj* get_array(obj* o){
@@ -492,151 +493,6 @@ obj* prim_add(obj* env, obj* list){
   return make_int(sum);
 }
 
-// (define <symbol> expr)
-obj* prim_define(obj* env, obj* list){
-  if (length(list) != 2 || list->car->type != SYM){
-    perror("[prim_define] Malformed define");
-    return Nil;
-  }
-  
-  if(list->car->symbol[0] != '$'){
-    perror("[prim_define] initial of variable takes only $");
-    return Nil;
-  };
-  
-  obj* sym = list->car;
-  obj* value = eval(env, list->cdr->car);
-  add_variable(env, sym, value);
-  return value;
-}
-
-obj* get_member_direct(obj* stru, obj* memb){
-  int tidx = stru->tidx;
-
-  //指定の構造体が指定のメンバを持つか検索
-  int i = search_memb(memb->symbol, tidx);
-  if(i<0){
-    perror("[get_member_direct] no member");
-    return Nil;
-  }
-
-  int membtidx = types[tidx].mem[i].tidx;
-  long membaddr = stru->data + types[tidx].mem[i].offset;
-
-  return get_gvar(make_gvar(membtidx, membaddr));
-}
-
-obj* get_member_indirect(obj* poin, obj* memb){
-  int tidx = types[poin->tidx].saki;
-  //long data = read_mem(8, poin->data);
-  long data = poin->data;
-
-  return get_member_direct(make_gvar(tidx, data), memb);
-}
-
-// (. <struct> <member>)
-obj* prim_member_direct(obj* env, obj* list){
-  obj* stru = eval(env, list->car);
-  
-  if(!stru){
-    perror("[prim_member_direct] no obj");
-    return Nil;
-  }
-  
-  if(stru->type != GVAR && stru->type != RES){
-    perror("[prim_member_direct] not gvar");
-    return Nil;
-  }
-
-  int tidx = stru->tidx;
-  if(types[tidx].kind != structure){
-    perror("[prim_member_direct] not struct");
-    return Nil;
-  }
-  
-  return get_member_direct(stru, list->cdr->car);
-}
-
-// (-> <struct pointer> <member>)
-obj* prim_member_indirect(obj* env, obj* list){
-  obj* stru = eval(env, list->car);
-  
-  if(!stru){
-    perror("[prim_member_direct] no obj");
-    return Nil;
-  }
-
-  if(stru->type != GVAR && stru->type != RES){
-    perror("[prim_member_direct] not gvar");
-    return Nil;
-  }
-  
-  int tidx = stru->tidx;
-  if(types[tidx].kind != pointer || types[types[tidx].saki].kind != structure){
-    perror("[prim_member_direct] not struct pointer");
-    return Nil;
-  }
-
-  return get_member_indirect(stru, list->cdr->car);
-}
-
-obj* printpointer(obj* o){
-  int tidx = o->tidx;
-  int i, j, size=256;
-  long data, addr = o->data;
-  char *str = (char*)malloc(sizeof(char)*size);
-  
-  for(i=1;i<types[tidx].pcount;i++){
-    addr = read_mem(8, addr);
-  }
-  
-  for(i=0;i<size;i+=sizeof(long)){
-    data = read_mem(8, addr+i);
-    memcpy(str+i, &data, sizeof(long));
-    for(j=0;j<sizeof(long);j++){
-      if(str[i+j] == '\0'){
-	printf("%s\n", str);
-	return Nil;
-      }
-    }
-  } 
-}
-
-obj* printarray(obj* o){
-  int i, tidx = o->tidx;
-  long data, addr = o->data;
-  int arraysize = types[tidx].arraysize;
-  
-  char* str = (char*)malloc(sizeof(char)*types[tidx].arraysize);
-  for(i=0;i<arraysize;i+=sizeof(long)){
-    data = read_mem(8, addr+i);
-    memcpy(str+i, &data, sizeof(long));
-  }
-  printf("%s\n", str);
-  return Nil;
-}
-
-obj* prim_printstring(obj* env, obj* list){
-  obj* o = eval(env, list->car);
-
-  if(o->type != GVAR && o->type != RES){
-    perror("[prim_printstring] malformed printstring");
-    return Nil;
-  }
-
-  int tidx = o->tidx;
-  if(types[tidx].kind == pointer && strcmp(types[tidx].name, "char") == 0){
-    return printpointer(o);
-  }
-  else if(types[tidx].kind == array && strcmp(types[tidx].name, "char") == 0){
-    return printarray(o);
-  }
-  else{
-    perror("[prim_printstring] takes only pointer or array");
-  }
-  
-}
-
 // (< <value> <value>)
 obj* prim_lt(obj *env, obj *list) {
   obj *args = eval_list(env, list);
@@ -665,6 +521,28 @@ obj* prim_gt(obj *env, obj *list) {
     perror("[prim_gt] < takes only numbers");
   }
   return x->value > y->value ? True : Nil;
+}
+
+// (= <value> <value>)
+obj* prim_eq(obj *env, obj *list) {
+  if (length(list) != 2){
+    perror("[prim_num_eq] Malformed =");
+    return Nil;
+  }
+  obj* values = eval_list(env, list);
+  obj* x = values->car;
+  obj* y = values->cdr->car;
+
+  if (x->type == INT && y->type == INT){
+    return x->value == y->value ? True : Nil;
+  }
+  else if((x->type == GVAR || x->type == RES) && (y->type == GVAR || y->type == RES)){
+    return x->data == y->data ? True : Nil;
+  }
+  else{
+    perror("[prim_num_eq] = only takes numbers");
+    return Nil;
+  }
 }
 
 // (if expr expr expr ...)
@@ -716,38 +594,30 @@ obj* prim_while(obj *env, obj *list) {
   return Nil;
 }
 
-// (= <value> <value>)
-obj* prim_num_eq(obj *env, obj *list) {
-  if (length(list) != 2){
-    perror("[prim_num_eq] Malformed =");
-    return Nil;
-  }
-  obj* values = eval_list(env, list);
-  obj* x = values->car;
-  obj* y = values->cdr->car;
-
-  if (x->type == INT && y->type == INT){
-    return x->value == y->value ? True : Nil;
-  }
-  else if((x->type == GVAR || x->type == RES) && (y->type == GVAR || y->type == RES)){
-    return x->data == y->data ? True : Nil;
-  }
-  else{
-    perror("[prim_num_eq] = only takes numbers");
-    return Nil;    
-  }
+// (break)
+obj* prim_break(obj* env, obj* list){
+  return Break;
 }
 
-// (eq expr expr)
-obj *prim_eq(obj *env, obj *list) {
-  if (length(list) != 2){
-    perror("[prim_eq] Malformed eq");
+// (define <symbol> expr)
+obj* prim_define(obj* env, obj* list){
+  if (length(list) != 2 || list->car->type != SYM){
+    perror("[prim_define] Malformed define");
     return Nil;
   }
-  obj *values = eval_list(env, list);
-  return values->car == values->cdr->car ? True : Nil;
+  
+  if(list->car->symbol[0] != '$'){
+    perror("[prim_define] initial of variable takes only $");
+    return Nil;
+  };
+  
+  obj* sym = list->car;
+  obj* value = eval(env, list->cdr->car);
+  add_variable(env, sym, value);
+  return value;
 }
 
+// (deref <pointer var>)
 obj* prim_deref(obj* env, obj* list){
   obj* o = eval(env, list->car);
   
@@ -762,12 +632,77 @@ obj* prim_deref(obj* env, obj* list){
     return Nil;
   }
   
-  return make_res(types[tidx].saki, read_mem(8, o->data));
+  return make_res(types[tidx].saki, read_mem(SIZE, o->data));
 }
 
-// (break)
-obj* prim_break(obj* env, obj* list){
-  return Break;
+obj* get_member_direct(obj* stru, obj* memb){
+  int tidx = stru->tidx;
+
+  //指定の構造体が指定のメンバを持つか検索
+  int i = search_memb(memb->symbol, tidx);
+  if(i<0){
+    perror("[get_member_direct] no member");
+    return Nil;
+  }
+
+  int membtidx = types[tidx].mem[i].tidx;
+  long membaddr = stru->data + types[tidx].mem[i].offset;
+
+  return get_gvar(make_gvar(membtidx, membaddr));
+}
+
+obj* get_member_indirect(obj* poin, obj* memb){
+  int tidx = types[poin->tidx].saki;
+  //long data = read_mem(SIZE, poin->data);
+  long data = poin->data;
+
+  return get_member_direct(make_gvar(tidx, data), memb);
+}
+
+// (. <struct> <member>)
+obj* prim_member_direct(obj* env, obj* list){
+  obj* stru = eval(env, list->car);
+  
+  if(!stru){
+    perror("[prim_member_direct] no obj");
+    return Nil;
+  }
+  
+  if(stru->type != GVAR && stru->type != RES){
+    perror("[prim_member_direct] not gvar");
+    return Nil;
+  }
+
+  int tidx = stru->tidx;
+  if(types[tidx].kind != structure){
+    perror("[prim_member_direct] not struct");
+    return Nil;
+  }
+  
+  return get_member_direct(stru, list->cdr->car);
+}
+
+// (-> <struct pointer> <member>)
+obj* prim_member_indirect(obj* env, obj* list){
+  obj* stru = eval(env, list->car);
+  
+  if(!stru){
+    perror("[prim_member_direct] no obj");
+    return Nil;
+  }
+
+  if(stru->type != GVAR && stru->type != RES){
+    perror("[prim_member_direct] not gvar");
+    return Nil;
+  }
+  
+  int tidx = stru->tidx;
+  if(types[tidx].kind != pointer || types[types[tidx].saki].kind != structure){
+    perror("[prim_member_direct] not struct pointer");
+    return Nil;
+  }
+
+  return get_member_indirect(stru, list->cdr->car);
 }
 
 // (print expr)
@@ -775,6 +710,164 @@ obj *prim_print(obj *env, obj *list){
     obj* tmp = list->car;
     print(eval(env, tmp));
     return Nil;
+}
+
+// addrからbytesizeだけblockへコピーする
+void read_mem_block(int bytesize, long addr, void* block){
+  int i;
+  long data;
+  for(i=0;i<bytesize;i+=SIZE){
+    data = read_mem(SIZE, addr+i);
+    memcpy(block+i, &data, SIZE);
+  }
+}
+
+obj* printstringp(obj* o){
+  int tidx = o->tidx;
+  int i, j, size=256;
+  long data, addr = o->data;
+  char *str = (char*)malloc(sizeof(char)*size);
+  
+  for(i=1;i<types[tidx].pcount;i++){
+    addr = read_mem(SIZE, addr);
+  }
+  
+  for(i=0;i<size;i+=SIZE){
+    data = read_mem(SIZE, addr+i);
+    memcpy(str+i, &data, SIZE);
+    for(j=0;j<SIZE;j++){
+      if(str[i+j] == '\0'){
+	printf("%s\n", str);
+	return Nil;
+      }
+    }
+  }
+}
+
+obj* printstringa(obj* o){
+  int i, tidx = o->tidx;
+  long addr = o->data;
+  char* str = (char*)malloc(types[tidx].bytesize);
+  
+  read_mem_block(types[tidx].bytesize, addr, (void*)str);
+  printf("%s\n", (char*)str);
+  return Nil;
+}
+
+// (printstring <char*>)
+// (printstring <char[]>)
+obj* prim_printstring(obj* env, obj* list){
+  obj* o = eval(env, list->car);
+
+  if(o->type != GVAR && o->type != RES){
+    perror("[prim_printstring] malformed printstring");
+    return Nil;
+  }
+  
+  int tidx = o->tidx;
+  if(types[tidx].kind == pointer && strcmp(types[tidx].name, "char") == 0){
+    return printstringp(o);
+  }
+  else if(types[tidx].kind == array && strcmp(types[tidx].name, "char") == 0){
+    return printstringa(o);
+  }
+  else{
+    perror("[prim_printstring] takes only pointer or array");
+    return Nil;
+  }
+}
+
+void printa(char* typename, int arraysize, void* array){
+  int i;
+  if(strcmp(typename, "long unsigned int") == 0){
+    for(i=0;i<arraysize;i++){
+      printf("%lu\n", ((long unsigned int*)array)[i]);
+    }
+  }
+  else if(strcmp(typename, "short unsigned int") == 0){
+    for(i=0;i<arraysize;i++){
+      printf("%u\n", ((short unsigned int*)array)[i]);
+    }
+  }
+  else if(strcmp(typename, "unsigned int") == 0){
+    for(i=0;i<arraysize;i++){
+      printf("%u\n", ((unsigned int*)array)[i]);
+    }
+  }
+  else if(strcmp(typename, "short int") == 0){
+    for(i=0;i<arraysize;i++){
+      printf("%d\n", ((short int*)array)[i]);
+    }
+  }
+  else if(strcmp(typename, "int") == 0){
+    for(i=0;i<arraysize;i++){
+      printf("%d\n", ((int*)array)[i]);
+    }
+  }
+  else if(strcmp(typename, "long int") == 0){
+    for(i=0;i<arraysize;i++){
+      printf("%ld\n", ((long int*)array)[i]);
+    }
+  }
+  else if(strcmp(typename, "float") == 0){
+    for(i=0;i<arraysize;i++){
+      printf("%f\n", ((float*)array)[i]);
+    }
+  }
+  else if(strcmp(typename, "double") == 0){
+    for(i=0;i<arraysize;i++){
+      printf("%lf\n", ((double*)array)[i]);
+    }
+  }
+  else if(strcmp(typename, "char") == 0){
+    for(i=0;i<arraysize;i++){
+      printf("%c\n", ((char*)array)[i]);
+    }
+  }
+}
+
+// (printarray <array var>)
+// (printarray <array var> <size>)
+obj* prim_printarray(obj* env, obj* list){
+  if(length(list) != 1 && length(list) != 2){
+    perror("[prim_printarray] malformed printarray");
+    return Nil;
+  }
+  
+  obj* o = eval(env, list->car);
+
+  if(o->type != GVAR && o->type != RES){
+    perror("[prim_printstring] malformed printstring");
+    return Nil;
+  }
+  
+  int tidx = o->tidx;
+  long addr = o->data;
+
+  
+  if(types[tidx].kind != array){
+    perror("[prim_member_direct] not struct");
+    return Nil;
+  }
+  
+
+  int arraysize;
+  void* array;
+
+  if(length(list) == 1){
+    arraysize = types[tidx].arraysize;
+    array = malloc(types[tidx].bytesize);
+  }
+  else if(length(list) == 2){
+    obj* sizeo = eval(env, list->cdr->car);
+    arraysize = sizeo->value;
+    array = malloc(types[types[tidx].saki].bytesize*sizeo->value);    
+  }
+  
+  read_mem_block(types[tidx].bytesize, addr, array);
+  printa(types[types[tidx].saki].name, arraysize, array);
+
+  return Nil; 
 }
 
 void add_variable(obj* env, obj* sym, obj* val) {
@@ -792,19 +885,19 @@ void add_primitive(obj* env, char* sym, primitive* prim){
 // 基本関数定義
 void define_primitive(obj* env){
   add_primitive(env, "+", prim_add);
-  add_primitive(env, "define", prim_define);
-  add_primitive(env, ".", prim_member_direct);
-  add_primitive(env, "->", prim_member_indirect);
-  add_primitive(env, "printstring", prim_printstring);
   add_primitive(env, "<", prim_lt);
   add_primitive(env, ">", prim_gt);
+  add_primitive(env, "=", prim_eq);
   add_primitive(env, "if", prim_if);
   add_primitive(env, "while", prim_while);
-  add_primitive(env, "=", prim_num_eq);
-  add_primitive(env, "eq", prim_eq);
-  add_primitive(env, "deref", prim_deref);
   add_primitive(env, "break", prim_break);
+  add_primitive(env, "define", prim_define);
+  add_primitive(env, "deref", prim_deref);
+  add_primitive(env, ".", prim_member_direct);
+  add_primitive(env, "->", prim_member_indirect);
   add_primitive(env, "print", prim_print);
+  add_primitive(env, "printstring", prim_printstring);
+  add_primitive(env, "printarray", prim_printarray);
 }
 
 

@@ -33,6 +33,11 @@ breakを追加
 printを追加
 
 printstringを追加
+- printp, printa処理のうちchar*, char[]に対する処理はこれが担う
+
+printarrayを追加
+
+型名をビットで表現する
 
 ====
 
@@ -45,3 +50,4 @@ print-string追加
 
 (define $task top)
 (while 1 (print (-> $task val)) (define $task (-> $task next)) (if (= $task top) (break)))
+

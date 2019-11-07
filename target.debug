@@ -7,7 +7,7 @@
            producer             (strp) "GNU C11 5.4.0 20160609 -mtune=generic -march=x86-64 -g -fstack-protector-strong"
            language             (data1) C99 (12)
            name                 (strp) "target.c"
-           comp_dir             (strp) "/home/asami/Dropbox/univ/study/master/interpreter"
+           comp_dir             (strp) "/home/yoshiki/Dropbox/univ/study/master/interpreter"
            low_pc               (addr) 0x0000000000400566 <add>
            high_pc              (data8) 114 (0x00000000004005d8)
            stmt_list            (sec_offset) 0
@@ -364,7 +364,21 @@
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x601088 <cp>
- [   320]    variable
+ [   320]    array_type
+             type                 (ref4) [    57]
+             sibling              (ref4) [   330]
+ [   329]      subrange_type
+               type                 (ref4) [    65]
+               upper_bound          (data1) 3
+ [   330]    variable
+             name                 (string) "ia"
+             decl_file            (data1) 1
+             decl_line            (data1) 13
+             type                 (ref4) [   320]
+             external             (flag_present) はい
+             location             (exprloc) 
+              [   0] addr 0x601090 <ia>
+ [   344]    variable
              name                 (strp) "tanaka"
              decl_file            (data1) 1
              decl_line            (data1) 33
@@ -372,7 +386,7 @@
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x6010a0 <tanaka>
- [   335]    variable
+ [   359]    variable
              name                 (string) "ito"
              decl_file            (data1) 1
              decl_line            (data1) 37
@@ -380,7 +394,7 @@
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x6010e0 <ito>
- [   34a]    variable
+ [   36e]    variable
              name                 (strp) "tokyo"
              decl_file            (data1) 1
              decl_line            (data1) 57
@@ -388,7 +402,7 @@
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x601120 <tokyo>
- [   35f]    variable
+ [   383]    variable
              name                 (string) "c1"
              decl_file            (data1) 1
              decl_line            (data1) 81
@@ -396,7 +410,7 @@
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x601180 <c1>
- [   373]    variable
+ [   397]    variable
              name                 (string) "c3"
              decl_file            (data1) 1
              decl_line            (data1) 73
@@ -404,7 +418,7 @@
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x601190 <c3>
- [   387]    variable
+ [   3ab]    variable
              name                 (string) "c2"
              decl_file            (data1) 1
              decl_line            (data1) 77
@@ -412,7 +426,7 @@
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x6011a0 <c2>
- [   39b]    variable
+ [   3bf]    variable
              name                 (string) "top"
              decl_file            (data1) 1
              decl_line            (data1) 85

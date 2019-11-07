@@ -10,7 +10,7 @@ int* q = NULL;
 char c = 'x';
 char ca[] = "hello world!";
 char* cp = "hello world!";
-
+int ia[] = {0, 1, 2, 3};
 
 int add(int x, int y){
   return x+y;

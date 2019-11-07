@@ -1,6 +1,6 @@
 #include "debuginfo.h"
 
-struct gvarinfo gvars[14] = {
+struct gvarinfo gvars[15] = {
     {6, "ggg", 0x601060},
     {7, "hhh", 0x601068},
     {12, "p", 0x6011c0},
@@ -8,6 +8,7 @@ struct gvarinfo gvars[14] = {
     {10, "c", 0x601070},
     {26, "ca", 0x601078},
     {9, "cp", 0x601088},
+    {27, "ia", 0x601090},
     {17, "tanaka", 0x6010a0},
     {17, "ito", 0x6010e0},
     {19, "tokyo", 0x601120},
@@ -48,7 +49,7 @@ struct memberinfo cell[2] = {
     {23, "next", 8}
 };
 
-struct typeinfo types[27] = {
+struct typeinfo types[28] = {
     {base, "long unsigned int", 8},
     {base, "unsigned char", 1},
     {base, "short unsigned int", 2},
@@ -60,7 +61,7 @@ struct typeinfo types[27] = {
     {base, "sizetype", 8},
     {pointer, "char", 8, .saki=10, .pcount=1},
     {base, "char", 1},
-    {array, "char", 20, .arraysize=20},
+    {array, "char", 20, .saki=10, .arraysize=20},
     {pointer, "int", 8, .saki=6, .pcount=1},
     {base, "long long int", 8},
     {base, "long long unsigned int", 8},
@@ -69,11 +70,12 @@ struct typeinfo types[27] = {
     {structure, "struct person", 40, .memnum=7, .mem=person},
     {structure, "struct kyuuyo", 32, .memnum=4, .mem=kyuuyo},
     {structure, "struct syain_dt", 88, .memnum=6, .mem=syain_dt},
-    {array, "char", 10, .arraysize=10},
+    {array, "char", 10, .saki=10, .arraysize=10},
     {pointer, "struct person", 8, .saki=17, .pcount=1},
     {structure, "struct cell", 16, .memnum=2, .mem=cell},
     {pointer, "struct cell", 8, .saki=22, .pcount=1},
     {base, "double", 8},
-    {array, "struct syain_dt", 1760, .arraysize=20},
-    {array, "char", 13, .arraysize=13}
+    {array, "struct syain_dt", 1760, .saki=19, .arraysize=20},
+    {array, "char", 13, .saki=10, .arraysize=13},
+    {array, "int", 16, .saki=6, .arraysize=4}
 };

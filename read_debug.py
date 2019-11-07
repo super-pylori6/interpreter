@@ -136,7 +136,7 @@ def write_infoc():
         elif v[0] == "pointer":
             s = "    {" + v[0] + ", \"" + v[1] + "\", " + str(v[2]) + ", .saki=" + str(offset_num_dict[v[3]]) + ", .pcount=" + str(v[4]) + "}"
         elif v[0] == "array":
-            s = "    {" + v[0] + ", \"" + v[1] + "\", " + str(v[2]) + ", .arraysize=" + str(v[3]) + "}"
+            s = "    {" + v[0] + ", \"" + v[1] + "\", " + str(v[2]) + ", .saki=" + str(offset_num_dict[v[3]]) + ", .arraysize=" + str(v[4]) + "}"
         elif v[0] == "structure":
             for l in struct_list_all:
                 if l[0] == v[1].split(" ")[1]:
@@ -180,13 +180,13 @@ def write_infoh():
     info_h.append("    char* name;")
     info_h.append("    int bytesize;")
     info_h.append("    union {")
-    info_h.append("        int saki;")
-    info_h.append("        int memnum;")
-    info_h.append("        int arraysize;")
+    info_h.append("        int saki; //pointer")
+    info_h.append("        int memnum; //structure")
     info_h.append("    };")
     info_h.append("    union {")
-    info_h.append("        int pcount;")
-    info_h.append("        struct memberinfo* mem;")
+    info_h.append("        int pcount; //pointer")
+    info_h.append("        int arraysize; //array")
+    info_h.append("        struct memberinfo* mem; //structure")
     info_h.append("    };")
     info_h.append("};")
     info_h.append("")
@@ -270,16 +270,18 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
 
             if datatype is not None:
                 tag = re.sub("_type", "", tag)
-                datatype_dict[offset] = [tag, datatype]
+                datatype_dict[offset] = [tag, datatype, datatype]
 
         elif MODE == SUBRANGE_TYPE:
             if re.match(" *upper_bound ", line):
                 size = getarraysize(line)
 
             if size is not None and datatype is not None:
-                datatype_dict[offset].append(0)
-                datatype_dict[offset].append(size)
-
+                #datatype_dict[offset].append(0)
+                datatype_dict[offset].insert(2, 0)
+                #datatype_dict[offset].append(size)
+                datatype_dict[offset].insert(4, size)
+                
         elif MODE == TYPEDEF:
             if re.match(" *type ", line):
                 datatype = gettype(line)
@@ -311,7 +313,7 @@ for k in datatype_dict.keys():
             datatype_dict[k][4] += 1
         datatype_dict[k][1] = datatype_dict[datatype_dict[k][1]][1]
     elif datatype_dict[k][0] == "array":
-        datatype_dict[k][2] = datatype_dict[k][3] * datatype_dict[datatype_dict[k][1]][2]
+        datatype_dict[k][2] = datatype_dict[k][4] * datatype_dict[datatype_dict[k][1]][2]
         datatype_dict[k][1] = datatype_dict[datatype_dict[k][1]][1]
         
 #pprint.pprint(datatype_dict)
