@@ -44,6 +44,9 @@ arrayとpointerは参照する
 
 型名削除
 
+printstructの追加
+- structのメンバ及びその値，型をすべて表示
+
 ====
 
 print-string追加

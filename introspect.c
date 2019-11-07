@@ -79,6 +79,7 @@ obj *symbol_table;
 
 obj* get_gvar(obj* o);
 void print(obj* o);
+void print_gvar(obj* o);
 
 //================
 // constructor
@@ -630,7 +631,7 @@ obj* prim_deref(obj* env, obj* list){
     return Nil;
   }
   
-  return make_res(types[tidx].saki, read_mem(SIZE, o->data));
+  return make_res(types[tidx].saki, o->data);
 }
 
 obj* get_member_direct(obj* stru, obj* memb){
@@ -779,57 +780,57 @@ void printa(int tbit, int arraysize, void* array){
   switch(tbit){
   case _LONG_UNSIGNED_INT:
     for(int i=0;i<arraysize;i++){
-      printf("%lu : %s\n", ((long unsigned int*)array)[i], get_typename(tbit));
+      printf("%lu :: %s\n", ((long unsigned int*)array)[i], get_typename(tbit));
     }
     break;
   case _UNSIGNED_CHAR:
     for(int i=0;i<arraysize;i++){
-      printf("%hhu : %s\n", ((unsigned char*)array)[i], get_typename(tbit));
+      printf("%hhu :: %s\n", ((unsigned char*)array)[i], get_typename(tbit));
     }
     break;
   case _SHORT_UNSIGNED_INT:
     for(int i=0;i<arraysize;i++){
-      printf("%hu : %s\n", ((short unsigned int*)array)[i], get_typename(tbit));
+      printf("%hu :: %s\n", ((short unsigned int*)array)[i], get_typename(tbit));
     }
     break;
   case _UNSIGNED_INT:
     for(int i=0;i<arraysize;i++){
-      printf("%u : %s\n", ((unsigned int*)array)[i], get_typename(tbit));
+      printf("%u :: %s\n", ((unsigned int*)array)[i], get_typename(tbit));
     }
     break;
   case _SIGNED_CHAR:
     for(int i=0;i<arraysize;i++){
-      printf("%hhd : %s\n", ((signed char*)array)[i], get_typename(tbit));
+      printf("%hhd :: %s\n", ((signed char*)array)[i], get_typename(tbit));
     }
     break;
   case _SHORT_INT:
     for(int i=0;i<arraysize;i++){
-      printf("%d : %s\n", ((short int*)array)[i], get_typename(tbit));
+      printf("%d :: %s\n", ((short int*)array)[i], get_typename(tbit));
     }
     break;
   case _INT:
     for(int i=0;i<arraysize;i++){
-      printf("%d : %s\n", ((int*)array)[i], get_typename(tbit));
+      printf("%d :: %s\n", ((int*)array)[i], get_typename(tbit));
     }
     break;
   case _LONG_INT:
     for(int i=0;i<arraysize;i++){
-      printf("%ld : %s\n", ((long int*)array)[i], get_typename(tbit));
+      printf("%ld :: %s\n", ((long int*)array)[i], get_typename(tbit));
     }
     break;
   case _FLOAT:
     for(int i=0;i<arraysize;i++){
-      printf("%f : %s\n", ((float*)array)[i], get_typename(tbit));
+      printf("%f :: %s\n", ((float*)array)[i], get_typename(tbit));
     }
     break;
   case _DOUBLE:
     for(int i=0;i<arraysize;i++){
-      printf("%lf : %s\n", ((double*)array)[i], get_typename(tbit));
+      printf("%lf :: %s\n", ((double*)array)[i], get_typename(tbit));
     }
     break;
   case _CHAR:
     for(int i=0;i<arraysize;i++){
-      printf("%c : %s\n", ((char*)array)[i], get_typename(tbit));
+      printf("%c :: %s\n", ((char*)array)[i], get_typename(tbit));
     }
     break;
   default:
@@ -881,6 +882,39 @@ obj* prim_printarray(obj* env, obj* list){
   return Nil; 
 }
 
+// (printarray <struct var>)
+obj* prim_printstruct(obj* env, obj* list){
+    obj* stru = eval(env, list->car);
+  
+  if(!stru){
+    perror("[prim_member_direct] no obj");
+    return Nil;
+  }
+  
+  if(stru->type != GVAR && stru->type != RES){
+    perror("[prim_member_direct] not gvar");
+    return Nil;
+  }
+
+  int tidx = stru->tidx;
+  if(types[tidx].kind != structure){
+    perror("[prim_member_direct] not struct");
+    return Nil;
+  }
+
+  for(int i=0;i<types[tidx].memnum;i++){
+    int membtidx = types[tidx].mem[i].tidx;
+    long membaddr = stru->data + types[tidx].mem[i].offset;
+    obj* memb = get_gvar(make_gvar(membtidx, membaddr));
+    
+    printf("%s = ", types[tidx].mem[i].name);
+    print_gvar(memb);
+    printf("\n");
+  }
+  
+  return Nil;
+}
+
 void add_variable(obj* env, obj* sym, obj* val) {
     obj* vars = env->vars;
     obj* tmp = make_list(make_list(sym, val), vars);
@@ -909,6 +943,7 @@ void define_primitive(obj* env){
   add_primitive(env, "print", prim_print);
   add_primitive(env, "printstring", prim_printstring);
   add_primitive(env, "printarray", prim_printarray);
+  add_primitive(env, "printstruct", prim_printstruct);
 }
 
 
@@ -979,20 +1014,20 @@ void print_base(long data, int tbit){
     perror("[print_base] not defined");
     break;
   }
-  printf(" : %s", get_typename(tbit));
+  printf(" :: %s", get_typename(tbit));
 }
 
 
 void print_pointer(long data, int tbit){
-  printf("0x%lx : %s*", data, get_typename(tbit));
+  printf("0x%lx :: %s*", data, get_typename(tbit));
 }
 
 void print_array(long data, int tbit){
-  printf("0x%lx : %s[]", data, get_typename(tbit));
+  printf("0x%lx :: %s[]", data, get_typename(tbit));
 }
 
 void print_struct(long data, int tbit){
-  printf("0x%lx : %s", data, get_typename(tbit));
+  printf("0x%lx :: %s", data, get_typename(tbit));
 }
 
 void print_gvar(obj* o){
