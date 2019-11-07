@@ -80,7 +80,36 @@ obj *symbol_table;
 obj* get_gvar(obj* o);
 void print(obj* o);
 
-
+/*
+char* get_typename(int tbit){
+  switch(tbit){
+  case _LONG_UNSIGNED_INT:
+    return "long unsigned int";
+  case _UNSIGNED_CHAR:
+    return "unsigned char";
+  case _SHORT_UNSIGNED_INT:
+    return "short unsigned int";
+  case _UNSIGNED_INT:
+    return "unsigned int";
+  case _SIGNED_CHAR:
+    return "signed char";
+  case _SHORT_INT:
+    return "short int";
+  case _INT:
+    return "int";
+  case _LONG_INT:
+    return "long int";
+  case _FLOAT:
+    return "float";
+  case _DOUBLE:
+    return "double";
+  case _CHAR:
+    return "char";
+  default:
+    return "";
+  }      
+}
+*/
 
 //================
 // constructor
@@ -777,52 +806,66 @@ obj* prim_printstring(obj* env, obj* list){
   }
 }
 
-void printa(char* typename, int arraysize, void* array){
-  int i;
-  if(strcmp(typename, "long unsigned int") == 0){
-    for(i=0;i<arraysize;i++){
-      printf("%lu\n", ((long unsigned int*)array)[i]);
+void printa(int tbit, int arraysize, void* array){
+  switch(tbit){
+  case _LONG_UNSIGNED_INT:
+    for(int i=0;i<arraysize;i++){
+      printf("%lu : %s\n", ((long unsigned int*)array)[i], get_typename(tbit));
     }
-  }
-  else if(strcmp(typename, "short unsigned int") == 0){
-    for(i=0;i<arraysize;i++){
-      printf("%u\n", ((short unsigned int*)array)[i]);
+    break;
+  case _UNSIGNED_CHAR:
+    for(int i=0;i<arraysize;i++){
+      printf("%hhu : %s\n", ((unsigned char*)array)[i], get_typename(tbit));
     }
-  }
-  else if(strcmp(typename, "unsigned int") == 0){
-    for(i=0;i<arraysize;i++){
-      printf("%u\n", ((unsigned int*)array)[i]);
+    break;
+  case _SHORT_UNSIGNED_INT:
+    for(int i=0;i<arraysize;i++){
+      printf("%hu : %s\n", ((short unsigned int*)array)[i], get_typename(tbit));
     }
-  }
-  else if(strcmp(typename, "short int") == 0){
-    for(i=0;i<arraysize;i++){
-      printf("%d\n", ((short int*)array)[i]);
+    break;
+  case _UNSIGNED_INT:
+    for(int i=0;i<arraysize;i++){
+      printf("%u : %s\n", ((unsigned int*)array)[i], get_typename(tbit));
     }
-  }
-  else if(strcmp(typename, "int") == 0){
-    for(i=0;i<arraysize;i++){
-      printf("%d\n", ((int*)array)[i]);
+    break;
+  case _SIGNED_CHAR:
+    for(int i=0;i<arraysize;i++){
+      printf("%hhd : %s\n", ((signed char*)array)[i], get_typename(tbit));
     }
-  }
-  else if(strcmp(typename, "long int") == 0){
-    for(i=0;i<arraysize;i++){
-      printf("%ld\n", ((long int*)array)[i]);
+    break;
+  case _SHORT_INT:
+    for(int i=0;i<arraysize;i++){
+      printf("%d : %s\n", ((short int*)array)[i], get_typename(tbit));
     }
-  }
-  else if(strcmp(typename, "float") == 0){
-    for(i=0;i<arraysize;i++){
-      printf("%f\n", ((float*)array)[i]);
+    break;
+  case _INT:
+    for(int i=0;i<arraysize;i++){
+      printf("%d : %s\n", ((int*)array)[i], get_typename(tbit));
     }
-  }
-  else if(strcmp(typename, "double") == 0){
-    for(i=0;i<arraysize;i++){
-      printf("%lf\n", ((double*)array)[i]);
+    break;
+  case _LONG_INT:
+    for(int i=0;i<arraysize;i++){
+      printf("%ld : %s\n", ((long int*)array)[i], get_typename(tbit));
     }
-  }
-  else if(strcmp(typename, "char") == 0){
-    for(i=0;i<arraysize;i++){
-      printf("%c\n", ((char*)array)[i]);
+    break;
+  case _FLOAT:
+    for(int i=0;i<arraysize;i++){
+      printf("%f : %s\n", ((float*)array)[i], get_typename(tbit));
     }
+    break;
+  case _DOUBLE:
+    for(int i=0;i<arraysize;i++){
+      printf("%lf : %s\n", ((double*)array)[i], get_typename(tbit));
+    }
+    break;
+  case _CHAR:
+    for(int i=0;i<arraysize;i++){
+      printf("%c : %s\n", ((char*)array)[i], get_typename(tbit));
+    }
+    break;
+  default:
+    perror("[printa] not defined type");
+    break;
   }
 }
 
@@ -850,7 +893,6 @@ obj* prim_printarray(obj* env, obj* list){
     return Nil;
   }
   
-
   int arraysize;
   void* array;
 
@@ -865,7 +907,7 @@ obj* prim_printarray(obj* env, obj* list){
   }
   
   read_mem_block(types[tidx].bytesize, addr, array);
-  printa(types[types[tidx].saki].name, arraysize, array);
+  printa(types[tidx].tbit, arraysize, array);
 
   return Nil; 
 }
@@ -929,69 +971,73 @@ void print_list(obj* o){
   }
 }
 
-void print_base(obj* o){
-  if(types[o->tidx].tbit & _LONG_UNSIGNED_INT){
-    printf("%lu : %s", (long unsigned int)o->data, types[o->tidx].name);
-  }
-  else if(types[o->tidx].tbit & _UNSIGNED_CHAR){
-    printf("%hhu : %s", (unsigned char)o->data, types[o->tidx].name);
-  }
-  else if(types[o->tidx].tbit & _SHORT_UNSIGNED_INT){
-    printf("%hu : %s", (short unsigned int)o->data, types[o->tidx].name);
-  }
-  else if(types[o->tidx].tbit & _UNSIGNED_INT){
-    printf("%u : %s", (unsigned int)o->data, types[o->tidx].name);
-  }
-  else if(types[o->tidx].tbit & _SIGNED_CHAR){
-    printf("%hhd : %s", (signed char)o->data, types[o->tidx].name);
-  }
-  else if(types[o->tidx].tbit & _SHORT_INT){
-    printf("%d : %s", (short int)o->data, types[o->tidx].name);
-  }
-  else if(types[o->tidx].tbit & _INT){
-    printf("%d : %s", (int)o->data, types[o->tidx].name);
-  }
-  else if(types[o->tidx].tbit & _LONG_INT){
-    printf("%ld : %s", o->data, types[o->tidx].name);
-  }
-  else if(types[o->tidx].tbit & _FLOAT){
-    printf("%f : %s", (float)o->data, types[o->tidx].name);
-  }
-  else if(types[o->tidx].tbit & _DOUBLE){
-    printf("%lf : %s", (double)o->data, types[o->tidx].name);
-  }
-  else if(types[o->tidx].tbit & _CHAR){
-    printf("%c : %s", (char)o->data, types[o->tidx].name);
-  }
-  else{
+void print_base(long data, int tbit){
+  switch(tbit){
+  case _LONG_UNSIGNED_INT:
+    printf("%lu", (long unsigned int)data);
+    break;
+  case _UNSIGNED_CHAR:
+    printf("%hhu", (unsigned char)data);
+    break;
+  case _SHORT_UNSIGNED_INT:
+    printf("%hu", (short unsigned int)data);
+    break;
+  case _UNSIGNED_INT:
+    printf("%u", (unsigned int)data);
+    break;
+  case _SIGNED_CHAR:
+    printf("%hhd", (signed char)data);
+    break;
+  case _SHORT_INT:
+    printf("%d", (short int)data);
+    break;
+  case _INT:
+    printf("%d", (int)data);
+    break;
+  case _LONG_INT:
+    printf("%ld", (long int)data);
+    break;
+  case _FLOAT:
+    printf("%f", (float)data);
+    break;
+  case _DOUBLE:
+    printf("%lf", (double)data);
+    break; 
+  case _CHAR:
+    printf("%c", (char)data);
+    break;
+  default:
     perror("[print_base] not defined");
+    break;
   }
+  printf(" : %s", get_typename(tbit));
 }
 
-void print_pointer(obj* o){
-  printf("0x%lx : %s*", o->data, types[o->tidx].name);
+
+void print_pointer(long data, int tbit){
+  printf("0x%lx : %s*", data, get_typename(tbit));
 }
 
-void print_array(obj* o){
-  printf("0x%lx : %s[]", o->data, types[o->tidx].name);
+void print_array(long data, int tbit){
+  printf("0x%lx : %s[]", data, get_typename(tbit));
 }
 
-void print_struct(obj* o){
-  printf("0x%lx : %s", o->data, types[o->tidx].name);
+void print_struct(long data, int tbit){
+  printf("0x%lx : %s", data, get_typename(tbit));
 }
 
 void print_gvar(obj* o){
   if(types[o->tidx].kind == base){
-    print_base(o);
+    print_base(o->data, types[o->tidx].tbit);
   }
   else if(types[o->tidx].kind == pointer){
-    print_pointer(o);
+    print_pointer(o->data, types[o->tidx].tbit);
   }
   else if(types[o->tidx].kind == array){
-    print_array(o);
+    print_array(o->data, types[o->tidx].tbit);
   }
   else if(types[o->tidx].kind == structure){
-    print_struct(o);
+    print_struct(o->data, types[o->tidx].tbit);
   }
   else{
     perror("[print_gvar] not defined");

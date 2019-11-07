@@ -55,6 +55,7 @@ struct typeinfo {
     };
 };
 
+char* get_typename(int tbit);
 extern struct gvarinfo gvars[15];
 extern struct memberinfo person[7];
 extern struct memberinfo kyuuyo[4];

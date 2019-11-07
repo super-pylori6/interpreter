@@ -1,5 +1,48 @@
 #include "debuginfo.h"
 
+char* get_typename(int tbit){
+  switch(tbit){
+  case _LONG_UNSIGNED_INT:
+    return "long unsigned int";
+  case _UNSIGNED_CHAR:
+    return "unsigned char";
+  case _SHORT_UNSIGNED_INT:
+    return "short unsigned int";
+  case _UNSIGNED_INT:
+    return "unsigned int";
+  case _SIGNED_CHAR:
+    return "signed char";
+  case _SHORT_INT:
+    return "short int";
+  case _INT:
+    return "int";
+  case _LONG_INT:
+    return "long int";
+  case _SIZETYPE:
+    return "sizetype";
+  case _CHAR:
+    return "char";
+  case _LONG_LONG_INT:
+    return "long long int";
+  case _LONG_LONG_UNSIGNED_INT:
+    return "long long unsigned int";
+  case _STRUCT_PERSON:
+    return "struct person";
+  case _STRUCT_KYUUYO:
+    return "struct kyuuyo";
+  case _STRUCT_SYAIN_DT:
+    return "struct syain_dt";
+  case _STRUCT_CELL:
+    return "struct cell";
+  case _DOUBLE:
+    return "double";
+  case _FLOAT:
+    return "float";
+  default:
+    return "";
+  }
+}
+
 struct gvarinfo gvars[15] = {
     {6, "ggg", 0x601060},
     {7, "hhh", 0x601068},

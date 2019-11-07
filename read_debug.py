@@ -110,6 +110,21 @@ def write_infoc():
     info_c = []
     info_c.append("#include \"" + WRITEFILE2 +"\"") 
     info_c.append("")
+
+    info_c.append("char* get_typename(int tbit){")
+    info_c.append("  switch(tbit){")
+        
+    for k in p_type_bit_dict.keys():
+        s = "  case _" + datatype_dict[k][1].upper().replace(' ', '_') + ":"
+        info_c.append(s)
+        s = datatype_dict[k][1]
+        info_c.append("    return \"" + datatype_dict[k][1] + "\";")
+        
+    info_c.append("  default:")
+    info_c.append("    return \"\";")
+    info_c.append("  }")
+    info_c.append("}")
+    info_c.append("")
         
     info_c.append("struct gvarinfo gvars[" + str(len(gvar_list_all)) + "] = {")
     for l in gvar_list_all:
@@ -150,6 +165,7 @@ def write_infoc():
             info_c.append(s)
     info_c.append("};")
     info_c.append("")
+
 
     with open(WRITEFILE1, mode="w") as f:
         f.writelines("\n".join(info_c))
@@ -200,6 +216,7 @@ def write_infoh():
     info_h.append("    };")
     info_h.append("};")
     info_h.append("")
+    info_h.append("char* get_typename(int tbit);")
     info_h.append("extern struct gvarinfo gvars[" + str(len(gvar_list_all)) + "];")
     for l in struct_list_all:
         info_h.append("extern struct memberinfo " + l[0] + "[" + str(len(l)-1) + "];")
