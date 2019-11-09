@@ -181,7 +181,7 @@ obj* read_list(void){
   for(;;){
     obj* tmp = read();
     if(!tmp || tmp == Nil){
-      perror("[read_list] no )\n");
+      printf("[read_list] no )\n");
       return NULL;
     }
     else if(tmp == Rparen){
@@ -222,7 +222,7 @@ obj* read_symbol(char c){
   int len = 1;
   while(isalnum(peek()) || strchr(symbol_chars, peek())){
     if(SYMBOL_MAX_LEN <= len){
-      perror("[read_symbol] too long symbol name");
+      printf("[read_symbol] too long symbol name");
       return NULL;
     }
     symbol[len++] = getchar();
@@ -240,7 +240,7 @@ void init(void){
 #endif
   
   if(ret != 0){
-    perror("[main] ATTACH error\n");
+    printf("[main] ATTACH error\n");
     exit(EXIT_FAILURE);
   }
 }
@@ -253,7 +253,7 @@ void quit(void){
 #endif
   
   if(ret != 0){
-    perror("[main] DETACH error\n");
+    printf("[main] DETACH error\n");
     exit(EXIT_FAILURE);
   }
   
@@ -300,7 +300,7 @@ obj* read(void){
       return read_symbol(c);
     }
     else{
-      perror("[read] error");
+      printf("[read] error");
       return NULL;
     }
   }
@@ -356,17 +356,17 @@ obj* eval_list(obj* env, obj* list){
 
 obj* apply(obj* env, obj* fn, obj* args){
   if(args->type != LIST && args != Nil){
-    perror("[apply] obj->type error");
+    printf("[apply] obj->type error");
   }
   if(fn->type != PRIM){
-    perror("[apply] fn->type error");
+    printf("[apply] fn->type error");
   }
   return fn->prim(env, args);
 }
 
 obj* eval(obj* env, obj* o){
   if(!o){
-    perror("[eval] no obj");
+    printf("[eval] no obj");
     return NULL;
   }
   
@@ -383,7 +383,7 @@ obj* eval(obj* env, obj* o){
   case SYM:{
     obj* list_sym = lookup(env, o);
     if(list_sym == Nil){
-      perror("[eval] no symbol");
+      printf("[eval] no symbol");
       return Nil;
     }
     else if(list_sym->cdr->type == GVAR){
@@ -397,13 +397,13 @@ obj* eval(obj* env, obj* o){
     obj* fn = eval(env, o->car);
     obj* args = o->cdr;
     if(fn->type != PRIM && fn->type != FUNC){
-      perror("[eval] fn->type error");
+      printf("[eval] fn->type error");
       return Nil;
     }
     return apply(env, fn, args);
   }
   default:
-    perror("[eval] obj->type error");
+    printf("[eval] obj->type error");
     return Nil;
   }
 }
@@ -452,7 +452,7 @@ obj* get_gvar(obj* o){
     return get_struct(o);
   }
   else{
-    perror("[get_gvar] not defined");
+    printf("[get_gvar] not defined");
     return NULL;
   }
 }
@@ -485,7 +485,7 @@ obj* prim_add(obj* env, obj* list){
   int sum = 0;
   for(obj* args = eval_list(env, list); args != Nil; args = args->cdr) {
     if(args->car->type != INT){
-      perror("[prim_add] args type error");
+      printf("[prim_add] args type error");
     }
     sum += args->car->value;
   }
@@ -496,13 +496,13 @@ obj* prim_add(obj* env, obj* list){
 obj* prim_lt(obj *env, obj *list) {
   obj *args = eval_list(env, list);
   if(length(args) != 2){
-    perror("[prim_lt] malformed <");
+    printf("[prim_lt] malformed <");
     return Nil;
   }
   obj *x = args->car;
   obj *y = args->cdr->car;
   if(x->type != INT || y->type != INT){
-    perror("[prim_lt] < takes only numbers");
+    printf("[prim_lt] < takes only numbers");
   }
   return x->value < y->value ? True : Nil;
 }
@@ -511,13 +511,13 @@ obj* prim_lt(obj *env, obj *list) {
 obj* prim_gt(obj *env, obj *list) {
   obj *args = eval_list(env, list);
   if(length(args) != 2){
-    perror("[prim_gt] malformed >");
+    printf("[prim_gt] malformed >");
     return Nil;
   }
   obj *x = args->car;
   obj *y = args->cdr->car;
   if(x->type != INT || y->type != INT){
-    perror("[prim_gt] < takes only numbers");
+    printf("[prim_gt] < takes only numbers");
   }
   return x->value > y->value ? True : Nil;
 }
@@ -525,7 +525,7 @@ obj* prim_gt(obj *env, obj *list) {
 // (= <value> <value>)
 obj* prim_eq(obj *env, obj *list) {
   if (length(list) != 2){
-    perror("[prim_num_eq] Malformed =");
+    printf("[prim_num_eq] Malformed =");
     return Nil;
   }
   obj* values = eval_list(env, list);
@@ -538,8 +538,42 @@ obj* prim_eq(obj *env, obj *list) {
   else if((x->type == GVAR || x->type == RES) && (y->type == GVAR || y->type == RES)){
     return x->data == y->data ? True : Nil;
   }
+  else if(x->type == INT && (y->type == GVAR || y->type == RES)){
+    return x->value == y->data ? True : Nil;
+  }
+  else if((x->type == GVAR || x->type == RES) && y->type == INT){
+    return x->data == y->value ? True : Nil;
+  }
   else{
-    perror("[prim_num_eq] = only takes numbers");
+    printf("[prim_num_eq] = only takes numbers");
+    return Nil;
+  }
+}
+
+// (!= <value> <value>)
+obj* prim_not_eq(obj *env, obj *list) {
+  if (length(list) != 2){
+    printf("[prim_num_eq] Malformed =");
+    return Nil;
+  }
+  obj* values = eval_list(env, list);
+  obj* x = values->car;
+  obj* y = values->cdr->car;
+
+  if (x->type == INT && y->type == INT){
+    return x->value != y->value ? True : Nil;
+  }
+  else if((x->type == GVAR || x->type == RES) && (y->type == GVAR || y->type == RES)){
+    return x->data != y->data ? True : Nil;
+  }
+  else if(x->type == INT && (y->type == GVAR || y->type == RES)){
+    return x->value != y->data ? True : Nil;
+  }
+  else if((x->type == GVAR || x->type == RES) && y->type == INT){
+    return x->data != y->value ? True : Nil;
+  }
+  else{
+    printf("[prim_num_eq] = only takes numbers");
     return Nil;
   }
 }
@@ -547,7 +581,7 @@ obj* prim_eq(obj *env, obj *list) {
 // (if expr expr expr ...)
 obj* prim_if(obj *env, obj *list) {
   if (length(list) < 2){
-    perror("[prim_if] Malformed if");
+    printf("[prim_if] Malformed if");
     return Nil;
   }
   obj* cond = list->car;
@@ -563,7 +597,7 @@ obj* prim_if(obj *env, obj *list) {
 // リストがBreakを含むか判定
 int break_in(obj* o){
   if(o->type != LIST){
-    perror("[get_end] not list");
+    printf("[get_end] not list");
     return 0;
   }
   while(o != Nil){
@@ -578,7 +612,7 @@ int break_in(obj* o){
 // (while cond expr ...)
 obj* prim_while(obj *env, obj *list) {
   if (length(list) < 2){
-    perror("[prim_while] Malformed while");
+    printf("[prim_while] Malformed while");
     return Nil;
   }
   obj* cond = list->car;
@@ -601,12 +635,12 @@ obj* prim_break(obj* env, obj* list){
 // (define <symbol> expr)
 obj* prim_define(obj* env, obj* list){
   if (length(list) != 2 || list->car->type != SYM){
-    perror("[prim_define] Malformed define");
+    printf("[prim_define] Malformed define");
     return Nil;
   }
   
   if(list->car->symbol[0] != '$'){
-    perror("[prim_define] initial of variable takes only $");
+    printf("[prim_define] initial of variable takes only $");
     return Nil;
   };
   
@@ -621,13 +655,13 @@ obj* prim_deref(obj* env, obj* list){
   obj* o = eval(env, list->car);
   
   if(!o){
-    perror("[prim_deref] no pointer var");
+    printf("[%s] no pointer var", __func__);
     return Nil;
   }
   
   int tidx = o->tidx;
   if(types[tidx].kind != pointer){
-    perror("[prim_deref] not pointer");
+    printf("[%s] not pointer", __func__);
     return Nil;
   }
   
@@ -640,7 +674,7 @@ obj* get_member_direct(obj* stru, obj* memb){
   //指定の構造体が指定のメンバを持つか検索
   int i = search_memb(memb->symbol, tidx);
   if(i<0){
-    perror("[get_member_direct] no member");
+    printf("[%s] no member", __func__);
     return Nil;
   }
 
@@ -663,18 +697,18 @@ obj* prim_member_direct(obj* env, obj* list){
   obj* stru = eval(env, list->car);
   
   if(!stru){
-    perror("[prim_member_direct] no obj");
+    printf("[%s] no obj", __func__);
     return Nil;
   }
   
   if(stru->type != GVAR && stru->type != RES){
-    perror("[prim_member_direct] not gvar");
+    printf("[%s] not gvar", __func__);
     return Nil;
   }
 
   int tidx = stru->tidx;
   if(types[tidx].kind != structure){
-    perror("[prim_member_direct] not struct");
+    printf("[%s] not struct", __func__);
     return Nil;
   }
   
@@ -686,18 +720,18 @@ obj* prim_member_indirect(obj* env, obj* list){
   obj* stru = eval(env, list->car);
   
   if(!stru){
-    perror("[prim_member_direct] no obj");
+    printf("[%s] no obj", __func__);
     return Nil;
   }
 
   if(stru->type != GVAR && stru->type != RES){
-    perror("[prim_member_direct] not gvar");
+    printf("[%s] not gvar", __func__);
     return Nil;
   }
   
   int tidx = stru->tidx;
   if(types[tidx].kind != pointer || types[types[tidx].saki].kind != structure){
-    perror("[prim_member_direct] not struct pointer");
+    printf("[%s] not struct pointer", __func__);
     return Nil;
   }
 
@@ -744,7 +778,7 @@ obj* printstringp(obj* o){
 }
 
 obj* printstringa(obj* o){
-  int i, tidx = o->tidx;
+  int tidx = o->tidx;
   long addr = o->data;
   char* str = (char*)malloc(types[tidx].bytesize);
   
@@ -759,7 +793,7 @@ obj* prim_printstring(obj* env, obj* list){
   obj* o = eval(env, list->car);
 
   if(o->type != GVAR && o->type != RES){
-    perror("[prim_printstring] malformed printstring");
+    printf("[%s] malformed printstring", __func__);
     return Nil;
   }
   
@@ -771,7 +805,7 @@ obj* prim_printstring(obj* env, obj* list){
     return printstringa(o);
   }
   else{
-    perror("[prim_printstring] takes only pointer or array");
+    printf("[%s] takes only pointer or array", __func__);
     return Nil;
   }
 }
@@ -834,7 +868,7 @@ void printa(int tbit, int arraysize, void* array){
     }
     break;
   default:
-    perror("[printa] not defined type");
+    printf("[%s] not defined type", __func__);
     break;
   }
 }
@@ -843,14 +877,14 @@ void printa(int tbit, int arraysize, void* array){
 // (printarray <array var> <size>)
 obj* prim_printarray(obj* env, obj* list){
   if(length(list) != 1 && length(list) != 2){
-    perror("[prim_printarray] malformed printarray");
+    printf("[%s] malformed printarray", __func__);
     return Nil;
   }
   
   obj* o = eval(env, list->car);
 
   if(o->type != GVAR && o->type != RES){
-    perror("[prim_printstring] malformed printstring");
+    printf("[%s] malformed printstring", __func__);
     return Nil;
   }
   
@@ -859,7 +893,7 @@ obj* prim_printarray(obj* env, obj* list){
 
   
   if(types[tidx].kind != array){
-    perror("[prim_member_direct] not struct");
+    printf("[%s] not struct", __func__);
     return Nil;
   }
   
@@ -887,18 +921,18 @@ obj* prim_printstruct(obj* env, obj* list){
     obj* stru = eval(env, list->car);
   
   if(!stru){
-    perror("[prim_member_direct] no obj");
+    printf("[%s] no obj", __func__);
     return Nil;
   }
   
   if(stru->type != GVAR && stru->type != RES){
-    perror("[prim_member_direct] not gvar");
+    printf("[%s] not gvar", __func__);
     return Nil;
   }
 
   int tidx = stru->tidx;
   if(types[tidx].kind != structure){
-    perror("[prim_member_direct] not struct");
+    printf("[%s] not struct", __func__);
     return Nil;
   }
 
@@ -933,6 +967,7 @@ void define_primitive(obj* env){
   add_primitive(env, "<", prim_lt);
   add_primitive(env, ">", prim_gt);
   add_primitive(env, "=", prim_eq);
+  add_primitive(env, "!=", prim_not_eq);
   add_primitive(env, "if", prim_if);
   add_primitive(env, "while", prim_while);
   add_primitive(env, "break", prim_break);
@@ -1011,8 +1046,8 @@ void print_base(long data, int tbit){
     printf("%c", (char)data);
     break;
   default:
-    perror("[print_base] not defined");
-    break;
+    printf("[%s] not defined", __func__);
+    return;
   }
   printf(" :: %s", get_typename(tbit));
 }
@@ -1044,7 +1079,7 @@ void print_gvar(obj* o){
     print_struct(o->data, types[o->tidx].tbit);
   }
   else{
-    perror("[print_gvar] not defined");
+    printf("[%s] not defined", __func__);
   }
 }
 
@@ -1052,7 +1087,7 @@ void print_gvar(obj* o){
 // リストの場合は辿ってすべて表示する
 void print(obj* o){
   if(!o){
-    perror("[print] no obj");
+    printf("[%s] no obj", __func__);
     return;
   }
   
@@ -1093,7 +1128,7 @@ void print(obj* o){
     printf("BREAK");
     break;
   default:
-    printf("[print] not defined");
+    printf("[%s] not defined", __func__);
     break;
   }
   printf("\n");
@@ -1102,7 +1137,7 @@ void print(obj* o){
 
 int main(int argc, char **argv){  
   if(argc != 2){
-    perror("[main] argc error");
+    printf("[main] argc error");
     return 0;
   }
 #ifdef PTRACE_ON

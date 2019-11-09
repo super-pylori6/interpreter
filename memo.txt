@@ -47,15 +47,47 @@ arrayとpointerは参照する
 printstructの追加
 - structのメンバ及びその値，型をすべて表示
 
+!= を追加
+
+typesの重複を削除
+- typedefのせいで重複が発生
+
+
+
 ====
 
-print-string追加
 
 (define $task top)
+(while 1 
 (print (-> $task val))
 (define $task (-> $task next))
 (if (= $task top) (break))
+)
 
 (define $task top)
 (while 1 (print (-> $task val)) (define $task (-> $task next)) (if (= $task top) (break)))
 
+(define $task top)
+(while 1 (print (-> $task val)) (define $task (-> $task next)) (if (= $task 0) (break)))
+
+
+(= (. c3 next) 0)
+
+(printstring cp)
+(printstring ca)
+
+(printarray ca)
+(printarray ia)
+
+(printstruct ito)
+(printstruct (. tokyo kyu))
+(printstruct (. tokyo pp))
+(printstruct (deref (. tokyo pp)))
+
+
+char の表示はシングルクオートで囲む
+\nとかは
+ほかは16進数で出す
+
+libvmiでカーネル覗く準備
+コンパイルとか
