@@ -7,9 +7,9 @@
            producer             (strp) "GNU C11 5.4.0 20160609 -mtune=generic -march=x86-64 -g -fstack-protector-strong"
            language             (data1) C99 (12)
            name                 (strp) "target.c"
-           comp_dir             (strp) "/home/asami/Dropbox/univ/study/master/interpreter"
+           comp_dir             (strp) "/home/yoshiki/Dropbox/univ/study/master/interpreter"
            low_pc               (addr) 0x0000000000400566 <add>
-           high_pc              (data8) 130 (0x00000000004005e8)
+           high_pc              (data8) 125 (0x00000000004005e3)
            stmt_list            (sec_offset) 0
  [    2d]    base_type
              byte_size            (data1) 8
@@ -49,273 +49,294 @@
              name                 (strp) "sizetype"
  [    6c]    pointer_type
              byte_size            (data1) 8
-             type                 (ref4) [    72]
- [    72]    base_type
+ [    6e]    pointer_type
+             byte_size            (data1) 8
+             type                 (ref4) [    74]
+ [    74]    base_type
              byte_size            (data1) 1
              encoding             (data1) signed_char (6)
              name                 (strp) "char"
- [    79]    array_type
-             type                 (ref4) [    72]
-             sibling              (ref4) [    89]
- [    82]      subrange_type
+ [    7b]    array_type
+             type                 (ref4) [    74]
+             sibling              (ref4) [    8b]
+ [    84]      subrange_type
                type                 (ref4) [    65]
                upper_bound          (data1) 19
- [    89]    const_type
-             type                 (ref4) [    72]
- [    8e]    pointer_type
+ [    8b]    const_type
+             type                 (ref4) [    74]
+ [    90]    pointer_type
              byte_size            (data1) 8
              type                 (ref4) [    57]
- [    94]    base_type
+ [    96]    base_type
              byte_size            (data1) 8
              encoding             (data1) signed (5)
              name                 (strp) "long long int"
- [    9b]    base_type
+ [    9d]    base_type
              byte_size            (data1) 8
              encoding             (data1) unsigned (7)
              name                 (strp) "long long unsigned int"
- [    a2]    typedef
+ [    a4]    pointer_type
+             byte_size            (data1) 8
+             type                 (ref4) [    aa]
+ [    aa]    const_type
+ [    ab]    typedef
              name                 (strp) "newint"
              decl_file            (data1) 1
-             decl_line            (data1) 20
+             decl_line            (data1) 21
              type                 (ref4) [    57]
- [    ad]    typedef
+ [    b6]    typedef
              name                 (strp) "newnewint"
              decl_file            (data1) 1
-             decl_line            (data1) 21
-             type                 (ref4) [    a2]
- [    b8]    structure_type
+             decl_line            (data1) 22
+             type                 (ref4) [    ab]
+ [    c1]    structure_type
              name                 (strp) "person"
              byte_size            (data1) 40
              decl_file            (data1) 1
-             decl_line            (data1) 23
-             sibling              (ref4) [   119]
- [    c4]      member
+             decl_line            (data1) 24
+             sibling              (ref4) [   122]
+ [    cd]      member
                name                 (strp) "name"
                decl_file            (data1) 1
-               decl_line            (data1) 24
-               type                 (ref4) [    6c]
+               decl_line            (data1) 25
+               type                 (ref4) [    6e]
                data_member_location (data1) 0
- [    d0]      member
+ [    d9]      member
                name                 (string) "sex"
                decl_file            (data1) 1
-               decl_line            (data1) 25
-               type                 (ref4) [    72]
+               decl_line            (data1) 26
+               type                 (ref4) [    74]
                data_member_location (data1) 8
- [    dc]      member
+ [    e5]      member
                name                 (string) "age"
                decl_file            (data1) 1
-               decl_line            (data1) 26
+               decl_line            (data1) 27
                type                 (ref4) [    57]
                data_member_location (data1) c
- [    e8]      member
+ [    f1]      member
                name                 (string) "add"
                decl_file            (data1) 1
-               decl_line            (data1) 27
-               type                 (ref4) [    6c]
+               decl_line            (data1) 28
+               type                 (ref4) [    6e]
                data_member_location (data1) 10
- [    f4]      member
+ [    fd]      member
                name                 (string) "job"
                decl_file            (data1) 1
-               decl_line            (data1) 28
-               type                 (ref4) [    6c]
+               decl_line            (data1) 29
+               type                 (ref4) [    6e]
                data_member_location (data1) 18
- [   100]      member
+ [   109]      member
                name                 (string) "tmp"
                decl_file            (data1) 1
-               decl_line            (data1) 29
-               type                 (ref4) [    a2]
+               decl_line            (data1) 30
+               type                 (ref4) [    ab]
                data_member_location (data1) 20
- [   10c]      member
+ [   115]      member
                name                 (string) "zzz"
                decl_file            (data1) 1
-               decl_line            (data1) 30
-               type                 (ref4) [    ad]
+               decl_line            (data1) 31
+               type                 (ref4) [    b6]
                data_member_location (data1) 24
- [   119]    structure_type
+ [   122]    structure_type
              name                 (strp) "kyuuyo"
              byte_size            (data1) 32
              decl_file            (data1) 1
-             decl_line            (data1) 41
-             sibling              (ref4) [   156]
- [   125]      member
+             decl_line            (data1) 42
+             sibling              (ref4) [   15f]
+ [   12e]      member
                name                 (strp) "kihon"
-               decl_file            (data1) 1
-               decl_line            (data1) 42
-               type                 (ref4) [    5e]
-               data_member_location (data1) 0
- [   131]      member
-               name                 (strp) "jyutaku"
                decl_file            (data1) 1
                decl_line            (data1) 43
                type                 (ref4) [    5e]
-               data_member_location (data1) 8
- [   13d]      member
-               name                 (strp) "kazoku"
+               data_member_location (data1) 0
+ [   13a]      member
+               name                 (strp) "jyutaku"
                decl_file            (data1) 1
                decl_line            (data1) 44
                type                 (ref4) [    5e]
-               data_member_location (data1) 10
- [   149]      member
-               name                 (strp) "sikaku"
+               data_member_location (data1) 8
+ [   146]      member
+               name                 (strp) "kazoku"
                decl_file            (data1) 1
                decl_line            (data1) 45
                type                 (ref4) [    5e]
+               data_member_location (data1) 10
+ [   152]      member
+               name                 (strp) "sikaku"
+               decl_file            (data1) 1
+               decl_line            (data1) 46
+               type                 (ref4) [    5e]
                data_member_location (data1) 18
- [   156]    structure_type
+ [   15f]    structure_type
              name                 (strp) "syain_dt"
-             byte_size            (data1) 88
+             byte_size            (data1) 96
              decl_file            (data1) 1
-             decl_line            (data1) 48
-             sibling              (ref4) [   1a9]
- [   162]      member
+             decl_line            (data1) 49
+             sibling              (ref4) [   1be]
+ [   16b]      member
                name                 (string) "no"
                decl_file            (data1) 1
-               decl_line            (data1) 49
+               decl_line            (data1) 50
                type                 (ref4) [    5e]
                data_member_location (data1) 0
- [   16d]      member
+ [   176]      member
                name                 (strp) "name"
                decl_file            (data1) 1
-               decl_line            (data1) 50
-               type                 (ref4) [    79]
+               decl_line            (data1) 51
+               type                 (ref4) [    7b]
                data_member_location (data1) 8
- [   179]      member
+ [   182]      member
                name                 (strp) "yaku"
                decl_file            (data1) 1
-               decl_line            (data1) 51
-               type                 (ref4) [   1a9]
+               decl_line            (data1) 52
+               type                 (ref4) [   1be]
                data_member_location (data1) 1c
- [   185]      member
+ [   18e]      member
                name                 (strp) "nensu"
                decl_file            (data1) 1
-               decl_line            (data1) 52
+               decl_line            (data1) 53
                type                 (ref4) [    57]
                data_member_location (data1) 28
- [   191]      member
+ [   19a]      member
                name                 (string) "kyu"
                decl_file            (data1) 1
-               decl_line            (data1) 53
-               type                 (ref4) [   119]
+               decl_line            (data1) 54
+               type                 (ref4) [   122]
                data_member_location (data1) 30
- [   19d]      member
+ [   1a6]      member
                name                 (string) "pp"
                decl_file            (data1) 1
-               decl_line            (data1) 54
-               type                 (ref4) [   1b9]
+               decl_line            (data1) 55
+               type                 (ref4) [   1ce]
                data_member_location (data1) 50
- [   1a9]    array_type
-             type                 (ref4) [    72]
-             sibling              (ref4) [   1b9]
- [   1b2]      subrange_type
+ [   1b1]      member
+               name                 (strp) "func"
+               decl_file            (data1) 1
+               decl_line            (data1) 56
+               type                 (ref4) [   1e4]
+               data_member_location (data1) 58
+ [   1be]    array_type
+             type                 (ref4) [    74]
+             sibling              (ref4) [   1ce]
+ [   1c7]      subrange_type
                type                 (ref4) [    65]
                upper_bound          (data1) 9
- [   1b9]    pointer_type
+ [   1ce]    pointer_type
              byte_size            (data1) 8
-             type                 (ref4) [    b8]
- [   1bf]    structure_type
+             type                 (ref4) [    c1]
+ [   1d4]    subroutine_type
+             prototyped           (flag_present) はい
+             sibling              (ref4) [   1e4]
+ [   1d9]      formal_parameter
+               type                 (ref4) [    6c]
+ [   1de]      formal_parameter
+               type                 (ref4) [    a4]
+ [   1e4]    pointer_type
+             byte_size            (data1) 8
+             type                 (ref4) [   1d4]
+ [   1ea]    structure_type
              name                 (strp) "cell"
              byte_size            (data1) 16
              decl_file            (data1) 1
-             decl_line            (data1) 66
-             sibling              (ref4) [   1e4]
- [   1cb]      member
+             decl_line            (data1) 69
+             sibling              (ref4) [   20f]
+ [   1f6]      member
                name                 (string) "val"
                decl_file            (data1) 1
-               decl_line            (data1) 67
+               decl_line            (data1) 70
                type                 (ref4) [    57]
                data_member_location (data1) 0
- [   1d7]      member
+ [   202]      member
                name                 (strp) "next"
                decl_file            (data1) 1
-               decl_line            (data1) 68
-               type                 (ref4) [   1e4]
+               decl_line            (data1) 71
+               type                 (ref4) [   20f]
                data_member_location (data1) 8
- [   1e4]    pointer_type
+ [   20f]    pointer_type
              byte_size            (data1) 8
-             type                 (ref4) [   1bf]
- [   1ea]    subprogram
+             type                 (ref4) [   1ea]
+ [   215]    subprogram
              external             (flag_present) はい
              name                 (string) "add"
              decl_file            (data1) 1
-             decl_line            (data1) 15
+             decl_line            (data1) 16
              prototyped           (flag_present) はい
-             type                 (ref4) [    57]
              low_pc               (addr) 0x0000000000400566 <add>
-             high_pc              (data8) 20 (0x000000000040057a <main>)
+             high_pc              (data8) 15 (0x0000000000400575 <main>)
              frame_base           (exprloc) 
               [   0] call_frame_cfa
              GNU_all_call_sites   (flag_present) はい
-             sibling              (ref4) [   224]
- [   20b]      formal_parameter
+             sibling              (ref4) [   24b]
+ [   232]      formal_parameter
                name                 (string) "x"
                decl_file            (data1) 1
-               decl_line            (data1) 15
-               type                 (ref4) [    57]
-               location             (exprloc) 
-                [   0] fbreg -20
- [   217]      formal_parameter
-               name                 (string) "y"
-               decl_file            (data1) 1
-               decl_line            (data1) 15
-               type                 (ref4) [    57]
+               decl_line            (data1) 16
+               type                 (ref4) [    6c]
                location             (exprloc) 
                 [   0] fbreg -24
- [   224]    subprogram
+ [   23e]      formal_parameter
+               name                 (string) "y"
+               decl_file            (data1) 1
+               decl_line            (data1) 16
+               type                 (ref4) [    a4]
+               location             (exprloc) 
+                [   0] fbreg -32
+ [   24b]    subprogram
              external             (flag_present) はい
              name                 (strp) "main"
              decl_file            (data1) 1
-             decl_line            (data1) 87
+             decl_line            (data1) 90
              prototyped           (flag_present) はい
              type                 (ref4) [    57]
-             low_pc               (addr) 0x000000000040057a <main>
-             high_pc              (data8) 110 (0x00000000004005e8)
+             low_pc               (addr) 0x0000000000400575 <main>
+             high_pc              (data8) 110 (0x00000000004005e3)
              frame_base           (exprloc) 
               [   0] call_frame_cfa
              GNU_all_tail_call_sites (flag_present) はい
-             sibling              (ref4) [   282]
- [   245]      variable
+             sibling              (ref4) [   2a9]
+ [   26c]      variable
                name                 (string) "iii"
                decl_file            (data1) 1
-               decl_line            (data1) 88
+               decl_line            (data1) 91
                type                 (ref4) [    57]
                location             (exprloc) 
-                [   0] fbreg -1808
- [   254]      variable
+                [   0] fbreg -1968
+ [   27b]      variable
                name                 (string) "ddd"
                decl_file            (data1) 1
-               decl_line            (data1) 89
-               type                 (ref4) [   282]
+               decl_line            (data1) 92
+               type                 (ref4) [   2a9]
                location             (exprloc) 
-                [   0] fbreg -1800
- [   263]      variable
+                [   0] fbreg -1960
+ [   28a]      variable
                name                 (string) "fff"
                decl_file            (data1) 1
-               decl_line            (data1) 90
-               type                 (ref4) [   289]
+               decl_line            (data1) 93
+               type                 (ref4) [   2b0]
                location             (exprloc) 
-                [   0] fbreg -1804
- [   272]      variable
+                [   0] fbreg -1964
+ [   299]      variable
                name                 (strp) "syomu"
                decl_file            (data1) 1
-               decl_line            (data1) 91
-               type                 (ref4) [   290]
+               decl_line            (data1) 94
+               type                 (ref4) [   2b7]
                location             (exprloc) 
-                [   0] fbreg -1792
- [   282]    base_type
+                [   0] fbreg -1952
+ [   2a9]    base_type
              byte_size            (data1) 8
              encoding             (data1) float (4)
              name                 (strp) "double"
- [   289]    base_type
+ [   2b0]    base_type
              byte_size            (data1) 4
              encoding             (data1) float (4)
              name                 (strp) "float"
- [   290]    array_type
-             type                 (ref4) [   156]
-             sibling              (ref4) [   2a0]
- [   299]      subrange_type
+ [   2b7]    array_type
+             type                 (ref4) [   15f]
+             sibling              (ref4) [   2c7]
+ [   2c0]      subrange_type
                type                 (ref4) [    65]
                upper_bound          (data1) 19
- [   2a0]    variable
+ [   2c7]    variable
              name                 (string) "ggg"
              decl_file            (data1) 1
              decl_line            (data1) 6
@@ -323,7 +344,7 @@
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x601060 <ggg>
- [   2b5]    variable
+ [   2dc]    variable
              name                 (string) "hhh"
              decl_file            (data1) 1
              decl_line            (data1) 7
@@ -331,119 +352,119 @@
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x601068 <hhh>
- [   2ca]    variable
+ [   2f1]    variable
              name                 (string) "p"
              decl_file            (data1) 1
              decl_line            (data1) 8
-             type                 (ref4) [    8e]
+             type                 (ref4) [    90]
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x6011c0 <p>
- [   2dd]    variable
+ [   304]    variable
              name                 (string) "q"
              decl_file            (data1) 1
              decl_line            (data1) 9
-             type                 (ref4) [    8e]
+             type                 (ref4) [    90]
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x6011c8 <q>
- [   2f0]    variable
-             name                 (string) "c"
+ [   317]    array_type
+             type                 (ref4) [    57]
+             sibling              (ref4) [   327]
+ [   320]      subrange_type
+               type                 (ref4) [    65]
+               upper_bound          (data1) 3
+ [   327]    variable
+             name                 (string) "ia"
              decl_file            (data1) 1
              decl_line            (data1) 10
-             type                 (ref4) [    89]
+             type                 (ref4) [   317]
+             external             (flag_present) はい
+             location             (exprloc) 
+              [   0] addr 0x601070 <ia>
+ [   33b]    variable
+             name                 (string) "c"
+             decl_file            (data1) 1
+             decl_line            (data1) 12
+             type                 (ref4) [    8b]
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x400678 <c>
- [   303]    array_type
-             type                 (ref4) [    72]
-             sibling              (ref4) [   313]
- [   30c]      subrange_type
+ [   34e]    array_type
+             type                 (ref4) [    74]
+             sibling              (ref4) [   35e]
+ [   357]      subrange_type
                type                 (ref4) [    65]
                upper_bound          (data1) 12
- [   313]    variable
+ [   35e]    variable
              name                 (string) "ca"
              decl_file            (data1) 1
-             decl_line            (data1) 11
-             type                 (ref4) [   303]
+             decl_line            (data1) 13
+             type                 (ref4) [   34e]
              external             (flag_present) はい
              location             (exprloc) 
-              [   0] addr 0x601070 <ca>
- [   327]    variable
+              [   0] addr 0x601080 <ca>
+ [   372]    variable
              name                 (string) "cp"
              decl_file            (data1) 1
-             decl_line            (data1) 12
-             type                 (ref4) [    6c]
+             decl_line            (data1) 14
+             type                 (ref4) [    6e]
              external             (flag_present) はい
              location             (exprloc) 
-              [   0] addr 0x601080 <cp>
- [   33b]    array_type
-             type                 (ref4) [    57]
-             sibling              (ref4) [   34b]
- [   344]      subrange_type
-               type                 (ref4) [    65]
-               upper_bound          (data1) 3
- [   34b]    variable
-             name                 (string) "ia"
-             decl_file            (data1) 1
-             decl_line            (data1) 13
-             type                 (ref4) [   33b]
-             external             (flag_present) はい
-             location             (exprloc) 
-              [   0] addr 0x601090 <ia>
- [   35f]    variable
+              [   0] addr 0x601090 <cp>
+ [   386]    variable
              name                 (strp) "tanaka"
              decl_file            (data1) 1
-             decl_line            (data1) 33
-             type                 (ref4) [    b8]
+             decl_line            (data1) 34
+             type                 (ref4) [    c1]
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x6010a0 <tanaka>
- [   374]    variable
+ [   39b]    variable
              name                 (string) "ito"
              decl_file            (data1) 1
-             decl_line            (data1) 37
-             type                 (ref4) [    b8]
+             decl_line            (data1) 38
+             type                 (ref4) [    c1]
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x6010e0 <ito>
- [   389]    variable
+ [   3b0]    variable
              name                 (strp) "tokyo"
              decl_file            (data1) 1
-             decl_line            (data1) 57
-             type                 (ref4) [   156]
+             decl_line            (data1) 59
+             type                 (ref4) [   15f]
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x601120 <tokyo>
- [   39e]    variable
+ [   3c5]    variable
              name                 (string) "c1"
              decl_file            (data1) 1
-             decl_line            (data1) 81
-             type                 (ref4) [   1bf]
+             decl_line            (data1) 84
+             type                 (ref4) [   1ea]
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x601180 <c1>
- [   3b2]    variable
+ [   3d9]    variable
              name                 (string) "c3"
              decl_file            (data1) 1
-             decl_line            (data1) 73
-             type                 (ref4) [   1bf]
+             decl_line            (data1) 76
+             type                 (ref4) [   1ea]
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x601190 <c3>
- [   3c6]    variable
+ [   3ed]    variable
              name                 (string) "c2"
              decl_file            (data1) 1
-             decl_line            (data1) 77
-             type                 (ref4) [   1bf]
+             decl_line            (data1) 80
+             type                 (ref4) [   1ea]
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x6011a0 <c2>
- [   3da]    variable
+ [   401]    variable
              name                 (string) "top"
              decl_file            (data1) 1
-             decl_line            (data1) 85
-             type                 (ref4) [   1e4]
+             decl_line            (data1) 88
+             type                 (ref4) [   20f]
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x6011b0 <top>

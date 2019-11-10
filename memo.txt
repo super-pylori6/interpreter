@@ -1,3 +1,7 @@
+================
+introspect.c
+================
+
 printp printa の追加
 
 :qと入力されたら終了する
@@ -49,12 +53,83 @@ printstructの追加
 
 != を追加
 
+char の表示はシングルクオートで囲む
+\nとかは
+ほかは16進数で出す
+
+
+
+
+
+================
+read_debug.py
+================
+
+カーネルのデバッグ情報(vmlinux.debug)を読み込めるように修正する
+- const_type の１つにタグしかなくて下の情報が何もないDIEがある (b49)
+- それのせいで何もないリストを参照してしまいエラーを出している
+- 手で書き加えるか，そこだけスルーするかしないとまずい
+- 手で書き加える場合は参照をたどっていき実際のソースで確認しないといけない
+問題のDIE : b49
+
+b49を参照するものを探す
+  [   b43]    pointer_type
+             byte_size            (data1) 8
+             type                 (ref4) [   b49]
+b49型のポインタ
+
+b49型のポインタを使うものを探す
+-> b43を参照するものを探す
+ [   b33]    subroutine_type
+             prototyped           (flag_present) はい
+             sibling              (ref4) [   b43]
+ [   b38]      formal_parameter
+               type                 (ref4) [   b43]
+ [   b3d]      formal_parameter
+               type                 (ref4) [    a4]
+b33の関数型の第一引数がb43型
+
+b33を参照するものを探す
+ [   b4a]    pointer_type
+             byte_size            (data1) 8
+             type                 (ref4) [   b33]
+b33型のポインタ (関数ポインタ)
+
+b4aを参照するものを探す
+pv_cpu_ops構造体のset_ldtメンバ
+  void (*set_ldt)(const void *desc, unsigned entries);
+
+void*型だった
+
+結論
+void の時はtypeの行そのものが無くなる
+
+void* の場合
+ [    6c]    pointer_type
+             byte_size            (data1) 8
+
+const void* の場合
+ [    a4]    pointer_type
+             byte_size            (data1) 8
+             type                 (ref4) [    aa]
+ [    aa]    const_type
+
+
+関数ポインタ型の対応
+void型の対応
+- typeD["0"] = ["base", "void", 8]をtypeD作成前に行う
+- 今後pointerやconstなのに参照先が記載されていないものはvoidとして"0"を参照するようにした
+
+
 typesの重複を削除
 - typedefのせいで重複が発生
 
 
 
 ====
+テストケース
+
+ggg
 
 
 (define $task top)
@@ -83,11 +158,6 @@ typesの重複を削除
 (printstruct (. tokyo kyu))
 (printstruct (. tokyo pp))
 (printstruct (deref (. tokyo pp)))
-
-
-char の表示はシングルクオートで囲む
-\nとかは
-ほかは16進数で出す
 
 libvmiでカーネル覗く準備
 コンパイルとか

@@ -1,19 +1,20 @@
-#include<stdio.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h> // malloc()
 
 
-int ggg = 4;
+int ggg  = 4;
 long hhh = 6;
-int* p = NULL;
-int* q = NULL;
-const char c = 'x';
-char ca[] = "hello world!";
-char* cp = "hello world!";
+int* p   = NULL;
+int* q   = NULL;
 int ia[] = {0, 1, 2, 3};
 
-int add(int x, int y){
-  return x+y;
+const char c = 'x';
+char ca[]    = "hello world!";
+char* cp     = "hello world!";
+
+void add(void* x, const void* y){
+  return;
 }
 
 
@@ -52,6 +53,7 @@ struct syain_dt{
   int nensu;
   struct kyuuyo kyu;
   struct person* pp;
+  void (*func)(void* x, const void *y);
 };
 
 struct syain_dt tokyo = {
@@ -60,7 +62,8 @@ struct syain_dt tokyo = {
   "Manager",
   10,
   {20, 5, 2, 1},
-  &tanaka
+  &tanaka,
+  add
 };
 
 struct cell {

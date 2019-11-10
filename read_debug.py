@@ -4,7 +4,6 @@ import re # 正規表現
 import pprint # リストや辞書を見やすく表示
 import sys # コマンドライン引数
 
-
 TAG = 0
 BASE_TYPE = 1
 CONST_TYPE = 2
@@ -15,11 +14,14 @@ TYPEDEF = 6
 STRUCTURE_TYPE = 7
 MEMBER = 8
 VARIABLE = 9
+SUBROUTINE_TYPE = 10
 NONE = 100
 MODE = TAG
 TYPE_GET = 0
 
-datatype_dict = {}
+
+typeD = {} # 辞書：.debugのオフセットと
+refD = {}
 struct_list_all = []
 gvar_list_all = []
 offset_num_dict = {}
@@ -31,7 +33,6 @@ if len(args) != 2:
     print("args error")
     sys.exit()
 
-#READFILE = "target.debug"
 READFILE = args[1]
 WRITEFILE1 = "debuginfo.c"
 WRITEFILE2 = "debuginfo.h"
@@ -99,8 +100,8 @@ def print_structinfo():
         else: print("\n};\n")
 
 def print_typeinfo():
-    print("struct typeinfo types[" + str(len(datatype_dict)) + "] = {")
-    for k, v in datatype_dict.items():
+    print("struct typeinfo types[" + str(len(typeD)) + "] = {")
+    for k, v in typeD.items():
         print("    {", end="")
         if v[0] == "base":
             print(v[0] + ", \"" + v[1] + "\", " + str(v[2]) + "}", end="")
@@ -112,7 +113,7 @@ def print_typeinfo():
             for l in struct_list_all:
                 if l[0] == v[1].split(" ")[1]:
                     print(v[0] + ", \"" + v[1] + "\", " + str(v[2]) + ", .memnum=" + str(len(l)-1) + ", .mem=" + v[1].split(" ")[1] + "}", end="")
-        if k != list(datatype_dict.keys())[-1]: print(",")
+        if k != list(typeD.keys())[-1]: print(",")
     print("\n};\n")
 
 def write_infoc():
@@ -122,12 +123,19 @@ def write_infoc():
 
     info_c.append("char* get_typename(int tbit){")
     info_c.append("  switch(tbit){")
-        
+
+    info_c.append("  case _FUNCTION:")
+    info_c.append("    return \"function\";")
+    info_c.append("  case _VOID:")
+    info_c.append("    return \"void\";")
+    
     for k in p_type_bit_dict.keys():
-        s = "  case _" + datatype_dict[k][1].upper().replace(' ', '_') + ":"
+        if typeD[k][1] == "function" or typeD[k][1] == "void":
+            continue
+        s = "  case _" + typeD[k][1].upper().replace(' ', '_') + ":"
         info_c.append(s)
-        s = datatype_dict[k][1]
-        info_c.append("    return \"" + datatype_dict[k][1] + "\";")
+        s = typeD[k][1]
+        info_c.append("    return \"" + typeD[k][1] + "\";")
         
     info_c.append("  default:")
     info_c.append("    return \"\";")
@@ -155,20 +163,38 @@ def write_infoc():
                 info_c.append(s)
         info_c.append("};")
         info_c.append("")
-        
-    info_c.append("struct typeinfo types[" + str(len(datatype_dict)) + "] = {")
-    for k, v in datatype_dict.items():
+
+    info_c.append("struct typeinfo types[" + str(len(typeD)) + "] = {")
+    for k, v in typeD.items():
         if v[0] == "base":
-            s = "    {" + v[0] + ", " + type_bit_dict[k] + ", " + str(v[2]) + "}"
+            s = "    {" + v[0] + ", "
+            s = s + "_" + v[1].upper().replace(' ', '_') + ", "
+            s = s + str(v[2]) + "}"
         elif v[0] == "pointer":
-            s = "    {" + v[0] + ", " + type_bit_dict[k] + ", " + str(v[2]) + ", .saki=" + str(offset_num_dict[v[3]]) + ", .pcount=" + str(v[4]) + "}"
+            s = "    {" + v[0] + ", "
+            s = s + "_" + v[1].upper().replace(' ', '_') + ", "
+            s = s + str(v[2]) + ", "
+            s = s + ".saki=" + str(offset_num_dict[v[3]]) + ", "
+            s = s + ".pcount=" + str(v[4]) + "}"
         elif v[0] == "array":
-            s = "    {" + v[0] + ", " + type_bit_dict[k] + ", " + str(v[2]) + ", .saki=" + str(offset_num_dict[v[3]]) + ", .arraysize=" + str(v[4]) + "}"
+            s = "    {" + v[0] + ", "
+            s = s + "_" + v[1].upper().replace(' ', '_') + ", "
+            s = s + str(v[2]) + ", "
+            s = s + ".saki=" + str(offset_num_dict[v[3]]) + ", "
+            s = s + ".arraysize=" + str(v[4]) + "}"
         elif v[0] == "structure":
             for l in struct_list_all:
                 if l[0] == v[1].split(" ")[1]:
-                    s = "    {" + v[0] + ", " + type_bit_dict[k] + ", " + str(v[2]) + ", .memnum=" + str(len(l)-1) + ", .mem=" + v[1].split(" ")[1] + "}"
-        if k != list(datatype_dict.keys())[-1]:
+                    s = "    {" + v[0] + ", "
+                    s = s + "_" + v[1].upper().replace(' ', '_') + ", "
+                    s = s + str(v[2]) + ", "
+                    s = s + ".memnum=" + str(len(l)-1) + ", "
+                    s = s + ".mem=" + v[1].split(" ")[1] + "}"
+        elif v[0] == "subroutine":
+            s = "    {" + v[0] + ", "
+            s = s + "_" + v[1].upper().replace(' ', '_') + ", "
+            s = s + str(v[2]) + "}"
+        if k != list(typeD.keys())[-1]:
             info_c.append(s + ",")
         else:
             info_c.append(s)
@@ -185,8 +211,10 @@ def write_infoh():
     info_h.append("#define _" + WRITEFILE2.replace(".", "_").upper())
     info_h.append("")
 
+    info_h.append("#define _FUNCTION" + " " * (len("LONG_LONG_UNSIGNED_INT") - len("FUNCTION") + 1) +"0x0")
+    info_h.append("#define _VOID" + " " * (len("LONG_LONG_UNSIGNED_INT") - len("VOID") + 1) + "0x1")
     for k in p_type_bit_dict.keys():
-        s = "#define _" + datatype_dict[k][1].upper().replace(' ', '_') + " " * (len("LONG_LONG_UNSIGNED_INT") - len(datatype_dict[k][1]) + 1)+ p_type_bit_dict[k]
+        s = "#define _" + typeD[k][1].upper().replace(' ', '_') + " " * (len("LONG_LONG_UNSIGNED_INT") - len(typeD[k][1]) + 1) + p_type_bit_dict[k]
         info_h.append(s)
     info_h.append("")
     
@@ -228,22 +256,87 @@ def write_infoh():
     info_h.append("extern struct gvarinfo gvars[" + str(len(gvar_list_all)) + "];")
     for l in struct_list_all:
         info_h.append("extern struct memberinfo " + l[0] + "[" + str(len(l)-1) + "];")
-    info_h.append("extern struct typeinfo types[" + str(len(datatype_dict)) + "];")
+    info_h.append("extern struct typeinfo types[" + str(len(typeD)) + "];")
     info_h.append("")
     info_h.append("#endif")
 
     with open(WRITEFILE2, mode="w") as f:
         f.writelines("\n".join(info_h))
-    
-"""
-# .debugファイルをそのまま表示
-with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
-    for line in debug_info:
-        print line.rstrip('\n')
+
 """
 
-print("make datatype_dict")
+.debug :: デバッグ情報が記述されたファイル
 
+[base_type]
+================================================================
+ [    57]    base_type
+             byte_size            (data1) 4
+             encoding             (data1) signed (5)
+             name                 (string) "int"
+================================================================
+
+[pointer_type]
+================================================================
+ [    6c]    pointer_type
+             byte_size            (data1) 8
+             type                 (ref4) [    72]
+ [    72]    base_type
+             byte_size            (data1) 1
+             encoding             (data1) signed_char (6)
+             name                 (strp) "char"
+================================================================
+
+[array_type]
+================================================================
+ [    79]    array_type
+             type                 (ref4) [    72]
+             sibling              (ref4) [    89]
+================================================================
+
+[subrange_type]
+================================================================
+ [    82]      subrange_type
+               type                 (ref4) [    65]
+               upper_bound          (data1) 19
+================================================================
+
+[const_type]
+================================================================
+ [    89]    const_type
+             type                 (ref4) [    72]
+================================================================
+
+[typedef]
+================================================================
+ [    a2]    typedef
+             name                 (strp) "newint"
+             decl_file            (data1) 1
+             decl_line            (data1) 20
+             type                 (ref4) [    57]
+ [    ad]    typedef
+             name                 (strp) "newnewint"
+             decl_file            (data1) 1
+             decl_line            (data1) 21
+             type                 (ref4) [    a2]
+================================================================
+
+[structure_type]
+================================================================
+ [    b8]    structure_type
+             name                 (strp) "person"
+             byte_size            (data1) 40
+             decl_file            (data1) 1
+             decl_line            (data1) 23
+             sibling              (ref4) [   119]
+================================================================
+
+"""
+
+
+print("make typeD")
+
+typeD["0"] = ["base", "void", 8]
+refD["0"]   = 0
 # 型情報の辞書の作成
 with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
     for line in debug_info:
@@ -259,11 +352,19 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
             elif tag == "const_type":
                 MODE = CONST_TYPE
                 offset = getoffset(line)
-                datatype= None
+                tag = re.sub("_type", "", tag)
+                typeD[offset] = ["base", "void", 8]
+                refD[offset] = 0
+                #if offset == "b49": MODE = NONE
             elif tag == "pointer_type":
                 MODE = POINTER_TYPE
                 offset = getoffset(line)
-                size = datatype = None
+                datatype = "void"
+                size = 8
+                tag = re.sub("_type", "", tag)
+                pcnt = 0
+                typeD[offset] = [tag, datatype, size, "0", pcnt]
+                refD[offset] = 0
             elif tag == "array_type":
                 MODE = ARRAY_TYPE
                 offset = getoffset(line)
@@ -277,9 +378,14 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
             elif tag == "structure_type":
                 MODE = STRUCTURE_TYPE
                 offset = getoffset(line)
+            elif tag == "subroutine_type":
+                MODE = SUBROUTINE_TYPE
+                offset = getoffset(line)
+                typeD[offset] = ["base", "function", 8]
+                refD[offset] = 0
+
             else:
-                MODE = None
-            continue
+                MODE = NONE
 
         elif MODE == BASE_TYPE:
             if re.match(" *byte_size ", line):
@@ -289,27 +395,24 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
 
             if size is not None and name is not None:
                 tag = re.sub("_type", "", tag)
-                datatype_dict[offset] = [tag, name, size]
-                #print(datatype_dict[offset])
+                typeD[offset] = [tag, name, size]
+                refD[offset] = 0
+                #print(typeD[offset])
 
         elif MODE == CONST_TYPE:
             if re.match(" *type ", line):
                 datatype = gettype(line)
-
-            if datatype is not None:
-                tag = re.sub("_type", "", tag)
-                datatype_dict[offset] = [tag, datatype]
-
+                refD[offset] = 1
+                typeD[offset] = [tag, datatype]
+                
         elif MODE == POINTER_TYPE:
             if re.match(" *byte_size ", line):
                 size = getsize(line)
+                typeD[offset][2] = size
             elif re.match(" *type ", line):
                 datatype = gettype(line)
-
-            if size is not None and datatype is not None:
-                tag = re.sub("_type", "", tag)
-                pcount = 0
-                datatype_dict[offset] = [tag, datatype, size, datatype, pcount]
+                typeD[offset][1] = typeD[offset][3] = datatype
+                refD[offset] = 1
 
         elif MODE == ARRAY_TYPE:
             if re.match(" *type ", line):
@@ -317,24 +420,26 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
 
             if datatype is not None:
                 tag = re.sub("_type", "", tag)
-                datatype_dict[offset] = [tag, datatype, datatype]
+                typeD[offset] = [tag, datatype, datatype]
+                refD[offset] = 1
 
         elif MODE == SUBRANGE_TYPE:
             if re.match(" *upper_bound ", line):
                 size = getarraysize(line)
 
             if size is not None and datatype is not None:
-                #datatype_dict[offset].append(0)
-                datatype_dict[offset].insert(2, 0)
-                #datatype_dict[offset].append(size)
-                datatype_dict[offset].insert(4, size)
+                #typeD[offset].append(0)
+                typeD[offset].insert(2, 0)
+                #typeD[offset].append(size)
+                typeD[offset].insert(4, size)
                 
         elif MODE == TYPEDEF:
             if re.match(" *type ", line):
                 datatype = gettype(line)
 
             if datatype is not None:
-                datatype_dict[offset] = [tag, datatype]
+                typeD[offset] = [tag, datatype]
+                refD[offset] = 1
 
         elif MODE == STRUCTURE_TYPE:
             if re.match(" *name ", line):
@@ -344,102 +449,149 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
 
             if name is not None and size is not None:
                 tag = re.sub("_type", "", tag)
-                datatype_dict[offset] = [tag, "struct " + name, size]
+                typeD[offset] = [tag, "struct " + name, size]
+                refD[offset] = 0
+
+        elif MODE == SUBROUTINE_TYPE:
+            continue
         else:
             continue
-#pprint.pprint(datatype_dict)
-sys.exit()
+
+#pprint.pprint(typeD)
+#pprint.pprint(refD)
+#sys.exit()
+
+"""
+
+typeD :: 辞書型 
+- DIEオフセット : DIE情報
+
+base_type [タグ, 型, バイトサイズ]
+================================================================
+ '50': ['base', 'short int', 2],
+ '57': ['base', 'int', 4],
+================================================================
+
+pointer_type [タグ, 型の参照, バイトサイズ, 型の参照, ポインターの数]
+================================================================
+ '6c': ['pointer', '72', 8, '72', 0]
+ '72': ['base', 'char', 1],
+================================================================
+
+array_type [タグ, 型の参照, バイトサイズ, 型の参照, 配列のサイズ]
+================================================================
+ '79': ['array', '72', 0, '72', 20],
+================================================================
+
+const_type [タグ, 型の参照]
+================================================================
+ '89': ['const', '72'],
+================================================================
+
+typedef [タグ, 型の参照]
+================================================================
+ 'a2': ['typedef', '57'],
+ 'ad': ['typedef', 'a2'],
+================================================================
+
+structure_type [タグ, 型, バイトサイズ]
+================================================================
+ 'b8': ['structure', 'struct person', 40]}
+================================================================
+
+"""
+
+"""
+
+refD :: 辞書型
+- DIEオフセット : typeDの要素のリストに型の参照があるかのフラグ
+- 参照がある場合1, ない場合0
+
+================================================================
+ '6c': 1,
+ '72': 0,
+ '79': 1,
+================================================================
+
 
 
 """
-print("make type_bit_dict first loop")
+
+
+print("make type_bit_dict")
 
 # 型とビットの辞書作成
-cnt = 0
-for k in datatype_dict.keys():
-    if datatype_dict[k][0] == "base":
-        #type_bit_dict[k] = p_type_bit_dict[k] = hex(2 ** i)
+cnt = 2
+for k in typeD.keys():
+    if typeD[k][0] == "base":
+        if typeD[k][1] == "function":
+            type_bit_dict[k] = p_type_bit_dict[k] = hex(0)
+        elif typeD[k][1] == "void":
+            type_bit_dict[k] = p_type_bit_dict[k] = hex(1)
+        else:
+            type_bit_dict[k] = p_type_bit_dict[k] = hex(cnt)
+            cnt = cnt + 1
+    elif typeD[k][0] == "structure":
         type_bit_dict[k] = p_type_bit_dict[k] = hex(cnt)
         cnt = cnt + 1
-    elif datatype_dict[k][0] == "structure":
-        #type_bit_dict[k] = p_type_bit_dict[k] = hex(2 ** i)
-        type_bit_dict[k] = p_type_bit_dict[k] = hex(cnt)
-        cnt = cnt + 1
+    elif typeD[k][0] == "subroutine":
+        type_bit_dict[k] = p_type_bit_dict[k] = hex(0)
 
-print("make type_bit_dict second loop")
 
-ref = 0
-for k in datatype_dict.keys():
-    if datatype_dict[k][0] == "pointer":
-        ref = datatype_dict[k][1]
-        print(k, datatype_dict[k])
-        while True:
-            if datatype_dict[ref][0] == "base" or "structure":
-                type_bit_dict[k] = type_bit_dict[ref]
-                break
-            elif datatype_dict[ref][0] == "pointer" or "array" or "typedef" or "const":
-                ref = datatype_dict[ref][1]
-                continue
-    elif datatype_dict[k][0] == "array":
-        ref = datatype_dict[k][1]
-        print(k, datatype_dict[k])
-        while True:
-            if datatype_dict[ref][0] == "base" or "structure":
-                type_bit_dict[k] = type_bit_dict[ref]
-                break
-            elif datatype_dict[ref][0] == "pointer" or "array" or "typedef" or "const":
-                ref = datatype_dict[ref][1]
-                continue
-    elif datatype_dict[k][0] == "typedef":
-        ref = datatype_dict[k][1]
-        print(k, datatype_dict[k])
-        while True:
-            if datatype_dict[ref][0] == "base" or "structure":
-                type_bit_dict[k] = type_bit_dict[ref]
-                break
-            elif datatype_dict[ref][0] == "pointer" or "array" or "typedef" or "const":
-                ref = datatype_dict[ref][1]
-                continue
-    elif datatype_dict[k][0] == "const":
-        ref = datatype_dict[k][1]
-        print(k, datatype_dict[k])
-        while True:
-            if datatype_dict[ref][0] == "base" or "structure":
-                type_bit_dict[k] = type_bit_dict[ref]
-                break
-            elif datatype_dict[ref][0] == "pointer" or "array" or "typedef" or "const":
-                ref = datatype_dict[ref][1]
-                continue
 
-#pprint.pprint(type_bit_dict)
-"""
-print("updata datatype_dict")
-
+        
+print("updata typeD")
 
 # 辞書の更新
-for k in datatype_dict.keys():
-    if datatype_dict[k][0] == "typedef":
-        datatype_dict[k] = datatype_dict[datatype_dict[k][1]]
-    elif datatype_dict[k][0] == "const":
-        datatype_dict[k] = datatype_dict[datatype_dict[k][1]]
-    elif datatype_dict[k][0] == "pointer":
-        if datatype_dict[datatype_dict[k][1]][0] == "pointer":
-            print(k, datatype_dict[k])
-            datatype_dict[k][4] = datatype_dict[datatype_dict[k][1]][4] + 1
-        else:
-            datatype_dict[k][4] += 1
-        datatype_dict[k][1] = datatype_dict[datatype_dict[k][1]][1]
-    elif datatype_dict[k][0] == "array":
-        datatype_dict[k][2] = datatype_dict[k][4] * datatype_dict[datatype_dict[k][1]][2]
-        datatype_dict[k][1] = datatype_dict[datatype_dict[k][1]][1]
-#pprint.pprint(datatype_dict)
+for k in typeD.keys():
+    while refD[k]:
+        if refD[typeD[k][1]]:
+            typeD[k][1] = typeD[typeD[k][1]][1]
+            continue
 
-sys.exit()
+        type_bit_dict[k] = type_bit_dict[typeD[k][1]]
+        
+        if typeD[k][0] == "typedef":
+            typeD[k] = typeD[typeD[k][1]]
+        elif typeD[k][0] == "const":
+            typeD[k] = typeD[typeD[k][1]]
+        elif typeD[k][0] == "pointer":
+            if typeD[typeD[k][1]][0] == "pointer":
+                #print(k, typeD[k])
+                typeD[k][4] = typeD[typeD[k][1]][4] + 1
+            else:
+                typeD[k][4] += 1
+            typeD[k][1] = typeD[typeD[k][1]][1]
+        elif typeD[k][0] == "array":
+            print(k, typeD[k])
+            typeD[k][2] = typeD[k][4] * typeD[typeD[k][1]][2]
+            typeD[k][1] = typeD[typeD[k][1]][1]
+        refD[k] = 0
+
+#pprint.pprint(typeD)
+
+#sys.exit()
+
+"""
+
+typeD :: 辞書型
+
+2つ目の要素は型に更新されており，4つ目の要素は
+
+================================================================
+ '6c': ['pointer', 'char', 8, '72', 1],
+ '72': ['base', 'char', 1],
+ '79': ['array', 'char', 20, '72', 20],
+================================================================
+
+
+"""
 
 print("make offset_num_dict")
 
 # オフセットと配列の添字の対応を作成
-for i, k in enumerate(datatype_dict.keys()):
+offset_num_dict["0"] = 0
+for i, k in enumerate(typeD.keys()):
     offset_num_dict[k] = i
 #pprint.pprint(offset_num_dict)
 

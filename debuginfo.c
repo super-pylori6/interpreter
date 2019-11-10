@@ -2,6 +2,10 @@
 
 char* get_typename(int tbit){
   switch(tbit){
+  case _FUNCTION:
+    return "function";
+  case _VOID:
+    return "void";
   case _LONG_UNSIGNED_INT:
     return "long unsigned int";
   case _UNSIGNED_CHAR:
@@ -44,83 +48,90 @@ char* get_typename(int tbit){
 }
 
 struct gvarinfo gvars[15] = {
-    {6, "ggg", 0x601060},
-    {7, "hhh", 0x601068},
-    {13, "p", 0x6011c0},
-    {13, "q", 0x6011c8},
-    {12, "c", 0x400678},
-    {28, "ca", 0x601070},
-    {9, "cp", 0x601080},
-    {29, "ia", 0x601090},
-    {18, "tanaka", 0x6010a0},
-    {18, "ito", 0x6010e0},
-    {20, "tokyo", 0x601120},
-    {23, "c1", 0x601180},
-    {23, "c3", 0x601190},
-    {23, "c2", 0x6011a0},
-    {24, "top", 0x6011b0}
+    {7, "ggg", 0x601060},
+    {8, "hhh", 0x601068},
+    {15, "p", 0x6011c0},
+    {15, "q", 0x6011c8},
+    {34, "ia", 0x601070},
+    {14, "c", 0x400678},
+    {35, "ca", 0x601080},
+    {11, "cp", 0x601090},
+    {22, "tanaka", 0x6010a0},
+    {22, "ito", 0x6010e0},
+    {24, "tokyo", 0x601120},
+    {29, "c1", 0x601180},
+    {29, "c3", 0x601190},
+    {29, "c2", 0x6011a0},
+    {30, "top", 0x6011b0}
 };
 
 struct memberinfo person[7] = {
-    {9, "name", 0},
-    {10, "sex", 8},
-    {6, "age", 12},
-    {9, "add", 16},
-    {9, "job", 24},
-    {16, "tmp", 32},
-    {17, "zzz", 36}
+    {11, "name", 0},
+    {12, "sex", 8},
+    {7, "age", 12},
+    {11, "add", 16},
+    {11, "job", 24},
+    {20, "tmp", 32},
+    {21, "zzz", 36}
 };
 
 struct memberinfo kyuuyo[4] = {
-    {7, "kihon", 0},
-    {7, "jyutaku", 8},
-    {7, "kazoku", 16},
-    {7, "sikaku", 24}
+    {8, "kihon", 0},
+    {8, "jyutaku", 8},
+    {8, "kazoku", 16},
+    {8, "sikaku", 24}
 };
 
-struct memberinfo syain_dt[6] = {
-    {7, "no", 0},
-    {11, "name", 8},
-    {21, "yaku", 28},
-    {6, "nensu", 40},
-    {19, "kyu", 48},
-    {22, "pp", 80}
+struct memberinfo syain_dt[7] = {
+    {8, "no", 0},
+    {13, "name", 8},
+    {25, "yaku", 28},
+    {7, "nensu", 40},
+    {23, "kyu", 48},
+    {26, "pp", 80},
+    {28, "func", 88}
 };
 
 struct memberinfo cell[2] = {
-    {6, "val", 0},
-    {24, "next", 8}
+    {7, "val", 0},
+    {30, "next", 8}
 };
 
-struct typeinfo types[30] = {
-    {base, 0x0, 8},
-    {base, 0x1, 1},
-    {base, 0x2, 2},
-    {base, 0x3, 4},
-    {base, 0x4, 1},
-    {base, 0x5, 2},
-    {base, 0x6, 4},
-    {base, 0x7, 8},
-    {base, 0x8, 8},
-    {pointer, 0x9, 8, .saki=10, .pcount=1},
-    {base, 0x9, 1},
-    {array, 0x9, 20, .saki=10, .arraysize=20},
-    {base, 0x9, 1},
-    {pointer, 0x6, 8, .saki=6, .pcount=1},
-    {base, 0xa, 8},
-    {base, 0xb, 8},
-    {base, 0x6, 4},
-    {base, 0x6, 4},
-    {structure, 0xc, 40, .memnum=7, .mem=person},
-    {structure, 0xd, 32, .memnum=4, .mem=kyuuyo},
-    {structure, 0xe, 88, .memnum=6, .mem=syain_dt},
-    {array, 0x9, 10, .saki=10, .arraysize=10},
-    {pointer, 0xc, 8, .saki=18, .pcount=1},
-    {structure, 0xf, 16, .memnum=2, .mem=cell},
-    {pointer, 0xf, 8, .saki=23, .pcount=1},
-    {base, 0x10, 8},
-    {base, 0x11, 4},
-    {array, 0xe, 1760, .saki=20, .arraysize=20},
-    {array, 0x9, 13, .saki=10, .arraysize=13},
-    {array, 0x6, 16, .saki=6, .arraysize=4}
+struct typeinfo types[36] = {
+    {base, _VOID, 8},
+    {base, _LONG_UNSIGNED_INT, 8},
+    {base, _UNSIGNED_CHAR, 1},
+    {base, _SHORT_UNSIGNED_INT, 2},
+    {base, _UNSIGNED_INT, 4},
+    {base, _SIGNED_CHAR, 1},
+    {base, _SHORT_INT, 2},
+    {base, _INT, 4},
+    {base, _LONG_INT, 8},
+    {base, _SIZETYPE, 8},
+    {pointer, _VOID, 8, .saki=0, .pcount=0},
+    {pointer, _CHAR, 8, .saki=12, .pcount=1},
+    {base, _CHAR, 1},
+    {array, _CHAR, 20, .saki=12, .arraysize=20},
+    {base, _CHAR, 1},
+    {pointer, _INT, 8, .saki=7, .pcount=1},
+    {base, _LONG_LONG_INT, 8},
+    {base, _LONG_LONG_UNSIGNED_INT, 8},
+    {pointer, _VOID, 8, .saki=19, .pcount=1},
+    {base, _VOID, 8},
+    {base, _INT, 4},
+    {base, _INT, 4},
+    {structure, _STRUCT_PERSON, 40, .memnum=7, .mem=person},
+    {structure, _STRUCT_KYUUYO, 32, .memnum=4, .mem=kyuuyo},
+    {structure, _STRUCT_SYAIN_DT, 96, .memnum=7, .mem=syain_dt},
+    {array, _CHAR, 10, .saki=12, .arraysize=10},
+    {pointer, _STRUCT_PERSON, 8, .saki=22, .pcount=1},
+    {base, _FUNCTION, 8},
+    {pointer, _FUNCTION, 8, .saki=27, .pcount=1},
+    {structure, _STRUCT_CELL, 16, .memnum=2, .mem=cell},
+    {pointer, _STRUCT_CELL, 8, .saki=29, .pcount=1},
+    {base, _DOUBLE, 8},
+    {base, _FLOAT, 4},
+    {array, _STRUCT_SYAIN_DT, 1920, .saki=24, .arraysize=20},
+    {array, _INT, 16, .saki=7, .arraysize=4},
+    {array, _CHAR, 13, .saki=12, .arraysize=13}
 };
