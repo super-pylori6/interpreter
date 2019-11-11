@@ -25,6 +25,12 @@ union quiz {
 
 union quiz q1 = {.a=1};
 
+enum color {
+  red,
+  blue,
+  green
+};
+
 typedef int newint;
 typedef newint newnewint;
 
@@ -61,6 +67,7 @@ struct syain_dt{
   struct kyuuyo kyu;
   struct person* pp;
   void (*func)(void* x, const void *y);
+  enum color c;
 };
 
 struct syain_dt tokyo = {
@@ -70,7 +77,8 @@ struct syain_dt tokyo = {
   10,
   {20, 5, 2, 1},
   &tanaka,
-  add
+  add,
+  green
 };
 
 struct cell {

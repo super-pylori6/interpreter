@@ -5,20 +5,21 @@ import pprint # リストや辞書を見やすく表示
 import sys # コマンドライン引数
 
 TAG = 0
-BASE_TYPE = 1
-CONST_TYPE = 2
-POINTER_TYPE = 3
-ARRAY_TYPE = 4
-SUBRANGE_TYPE = 5
-TYPEDEF = 6
-STRUCTURE_TYPE = 7
-UNION_TYPE = 8
-MEMBER = 9
-STRUCT_MEMBER = 10
-UNION_MEMBER = 11
-VARIABLE = 12
-SUBROUTINE_TYPE = 13
-VOLATILE_TYPE = 14
+TBASE = 1
+TCONST = 2
+TPOINTER = 3
+TARRAY = 4
+TSUBRANGE = 5
+TTYPEDEF = 6
+TSTRUCT = 7
+TUNION = 8
+TMEM = 9
+TSMEM = 10
+TUMEM = 11
+TVAR = 12
+TSUBROUTINE = 13
+TVOLATILE = 14
+TENUM = 15
 NONE = 100
 MODE = TAG
 
@@ -219,6 +220,11 @@ def write_infoc():
                     s = s + str(v[2]) + ", "
                     s = s + ".memnum=" + str(len(l)-1) + ", "
                     s = s + ".mem=" + v[1].split(" ")[1] + "}"
+
+        elif v[0] == "enumeration":
+            s = "    {" + v[0] + ", "
+            s = s + "_" + v[1].upper().replace(' ', '_') + ", "
+            s = s + str(v[2]) + "}"
                     
         elif v[0] == "subroutine":
             s = "    {" + v[0] + ", "
@@ -266,7 +272,8 @@ def write_infoh():
     info_h.append("    pointer,")
     info_h.append("    array,")
     info_h.append("    structure,")
-    info_h.append("    uni")
+    info_h.append("    uni,")
+    info_h.append("    enumeration,")
     info_h.append("};")
     info_h.append("")
     info_h.append("struct typeinfo {")
@@ -379,29 +386,31 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
 
             # タグに応じたモードを設定して次の行へ
             if tag == "base_type":
-                MODE = BASE_TYPE
+                MODE = TBASE
                 offset = getoffset(line)
-                size = name = None
+                tag = re.sub("_type", "", tag)
+                typeD[offset] = [tag, "void", 8]
+                refD[offset] = 0
             elif tag == "const_type":
-                MODE = CONST_TYPE
+                MODE = TCONST
                 offset = getoffset(line)
                 tag = re.sub("_type", "", tag)
                 typeD[offset] = [tag, "0", 8]
                 refD[offset] = 1
             elif tag == "volatile_type":
-                MODE = VOLATILE_TYPE
+                MODE = TVOLATILE
                 offset = getoffset(line)
                 tag = re.sub("_type", "", tag)
                 typeD[offset] = [tag, "0", 8]
                 refD[offset] = 1
             elif tag == "typedef" :
-                MODE = TYPEDEF
+                MODE = TTYPEDEF
                 offset = getoffset(line)
                 tag = re.sub("_type", "", tag)
                 typeD[offset] = [tag, "0", 8]
                 refD[offset] = 1
             elif tag == "pointer_type":
-                MODE = POINTER_TYPE
+                MODE = TPOINTER
                 offset = getoffset(line)
                 datatype = "void"
                 size = 8
@@ -410,7 +419,7 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
                 typeD[offset] = [tag, "0", size, "0", pcnt]
                 refD[offset] = 1
             elif tag == "array_type":
-                MODE = ARRAY_TYPE
+                MODE = TARRAY
                 offset = getoffset(line)
                 size = 0
                 tag = re.sub("_type", "", tag)
@@ -418,15 +427,30 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
                 typeD[offset] = [tag, "0", size, "0", size]
                 refD[offset] = 1
             elif tag == "subrange_type" :
-                MODE = SUBRANGE_TYPE
+                MODE = TSUBRANGE
             elif tag == "structure_type":
-                MODE = STRUCTURE_TYPE
+                MODE = TSTRUCT
                 offset = getoffset(line)
+                tag = re.sub("_type", "", tag)
+                size = 0
+                typeD[offset] = [tag, "void", size]
+                refD[offset] = 0
             elif tag == "union_type":
-                MODE = UNION_TYPE
+                MODE = TUNION
                 offset = getoffset(line)
+                tag = re.sub("_type", "", tag)
+                size = 0
+                typeD[offset] = [tag, "void", size]
+                refD[offset] = 0
+            elif tag == "enumeration_type":
+                MODE = TENUM
+                offset = getoffset(line)
+                tag = re.sub("_type", "", tag)
+                size = 4
+                typeD[offset] = [tag, "void", size]
+                refD[offset] = 0
             elif tag == "subroutine_type":
-                MODE = SUBROUTINE_TYPE
+                MODE = TSUBROUTINE
                 offset = getoffset(line)
                 typeD[offset] = ["base", "function", 8]
                 refD[offset] = 0
@@ -434,25 +458,21 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
             else:
                 MODE = NONE
 
-        elif MODE == BASE_TYPE:
+        elif MODE == TBASE:
             if re.match(" *byte_size ", line):
                 size = getsize(line)
+                typeD[offset][2] = size
             elif re.match(" *name ", line):
                 name = getname(line)
+                typeD[offset][1] = name
 
-            if size is not None and name is not None:
-                tag = re.sub("_type", "", tag)
-                typeD[offset] = [tag, name, size]
-                refD[offset] = 0
-                #print(typeD[offset])
-
-        elif MODE == CONST_TYPE or MODE == VOLATILE_TYPE or MODE == TYPEDEF:
+        elif MODE in {TCONST, TVOLATILE, TTYPEDEF}:
             if re.match(" *type ", line):
                 datatype = gettype(line)
                 typeD[offset] = [tag, datatype]
                 refD[offset] = 1
 
-        elif MODE == POINTER_TYPE:
+        elif MODE == TPOINTER:
             if re.match(" *byte_size ", line):
                 size = getsize(line)
                 typeD[offset][2] = size
@@ -461,40 +481,42 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
                 typeD[offset][1] = typeD[offset][3] = datatype
                 refD[offset] = 1
 
-        elif MODE == ARRAY_TYPE:
+        elif MODE == TARRAY:
             if re.match(" *type ", line):
                 datatype = gettype(line)
                 typeD[offset][1] = typeD[offset][3] = datatype
                 refD[offset] = 1
 
-        elif MODE == SUBRANGE_TYPE:
+        elif MODE == TSUBRANGE:
             if re.match(" *upper_bound ", line):
                 arraysize = getarraysize(line)
                 typeD[offset][4] = arraysize
                 
-        elif MODE == STRUCTURE_TYPE:
+        elif MODE == TSTRUCT:
             if re.match(" *name ", line):
                 name = getname(line)
+                typeD[offset][1] = "struct " + name
             elif re.match(" *byte_size ", line):
                 size = getsize(line)
+                typeD[offset][2] = size
 
-            if name is not None and size is not None:
-                tag = re.sub("_type", "", tag)
-                typeD[offset] = [tag, "struct " + name, size]
-                refD[offset] = 0
-
-        elif MODE == UNION_TYPE:
+        elif MODE == TUNION:
             if re.match(" *name ", line):
                 name = getname(line)
+                typeD[offset][1] = "union " + name
             elif re.match(" *byte_size ", line):
                 size = getsize(line)
+                typeD[offset][2] = size
 
-            if name is not None and size is not None:
-                tag = re.sub("_type", "", tag)
-                typeD[offset] = [tag, "union " + name, size]
-                refD[offset] = 0
-
-        elif MODE == SUBROUTINE_TYPE:
+        elif MODE == TENUM:
+            if re.match(" *name ", line):
+                name = getname(line)
+                typeD[offset][1] = "enum " + name
+            elif re.match(" *byte_size ", line):
+                size = getsize(line)
+                typeD[offset][2] = size
+                
+        elif MODE == TSUBROUTINE:
             continue
         else:
             continue
@@ -579,6 +601,9 @@ for k in typeD.keys():
     elif typeD[k][0] == "union":
         bitD[k] = p_bitD[k] = hex(cnt)
         cnt = cnt + 1
+    elif typeD[k][0] == "enumeration":
+        bitD[k] = p_bitD[k] = hex(cnt)
+        cnt = cnt + 1
     elif typeD[k][0] == "subroutine":
         bitD[k] = p_bitD[k] = hex(0)
 
@@ -653,18 +678,18 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
 
             # タグに応じたモードを設定して次の行へ
             if tag == "structure_type":
-                MODE = STRUCTURE_TYPE
+                MODE = TSTRUCT
                 offset = getoffset(line)
             elif tag == "union_type":
-                MODE = UNION_TYPE
+                MODE = TUNION
                 offset = getoffset(line)
-            elif tag == "member" and (MODE == STRUCTURE_TYPE or MODEM == STRUCT_MEMBER):
-                MODE = MEMBER
-                MODEM = STRUCT_MEMBER
+            elif tag == "member" and (MODE == TSTRUCT or MODEM == TSMEM):
+                MODE = TMEM
+                MODEM = TSMEM
                 structl.append([0, 0, "0"])
-            elif tag == "member" and (MODE == UNION_TYPE or MODEM == UNION_MEMBER):
-                MODE = MEMBER
-                MODEM = UNION_MEMBER
+            elif tag == "member" and (MODE == TUNION or MODEM == TUMEM):
+                MODE = TMEM
+                MODEM = TUMEM
                 unionl.append([0, 0, "0"])
             elif tag == "subprogram":
                 break
@@ -672,21 +697,21 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
                 MODE = NONE
             continue
 
-        elif MODE == STRUCTURE_TYPE:
+        elif MODE == TSTRUCT:
             if re.match(" *name ", line):
                 structname = getname(line)
                 structl = [structname]
                 structl_all.append(structl)
             continue
 
-        elif MODE == UNION_TYPE:
+        elif MODE == TUNION:
             if re.match(" *name ", line):
                 unionname = getname(line)
                 unionl = [unionname]
                 unionl_all.append(unionl)
             continue
 
-        elif MODE == MEMBER and MODEM == STRUCT_MEMBER:
+        elif MODE == TMEM and MODEM == TSMEM:
             if re.match(" *name ", line):
                 mname = getname(line)
                 structl[-1][1] = mname
@@ -699,7 +724,7 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
                 structl[-1][2] = moffset
                 #print(structl)
                 
-        elif MODE == MEMBER and MODEM == UNION_MEMBER:
+        elif MODE == TMEM and MODEM == TUMEM:
             if re.match(" *name ", line):
                 mname = getname(line)
                 unionl[-1][1] = mname
@@ -721,12 +746,12 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
 
             # タグに応じたモードを設定して次の行へ
             if tag == "variable":
-                MODE = VARIABLE
+                MODE = TVAR
             else:
                 MODE = NONE
             continue
 
-        elif MODE == VARIABLE:
+        elif MODE == TVAR:
             if re.match(" *type ", line):
                 vartype_offset = gettype(line)
                 TYPE_GET = 1

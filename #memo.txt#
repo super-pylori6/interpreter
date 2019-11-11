@@ -1,0 +1,183 @@
+================
+introspect.c
+================
+
+printp printa の追加
+
+:qと入力されたら終了する
+
+. と -> の処理を分ける
+
+-> が正しく動くか確認
+
+if while 処理の追加
+- < の追加
+- if の追加
+(if (< 3 5) 1 0)
+(if (< 5 3) 1 0)
+- whileの追加
+(define $i 1)
+(while (< $i 10) (printp cp) (define $i (+ $i 1)))
+
+= の追加
+
+define の頭文字を$に限定する
+
+ifdefでptrace処理を消せるようにする
+
+現在の問題
+(define $task ggg)を実行するとgggが評価された値が$taskに格納される
+$taskを実行するともう一度評価されてしまい値がおかしくなる
+
+メモリ内容の取得結果を表すtype RESを追加
+- それに伴いtype判定などを修正
+
+breakを追加
+
+printを追加
+
+printstringを追加
+- printp, printa処理のうちchar*, char[]に対する処理はこれが担う
+
+printarrayを追加
+
+型名をビットで表現する
+- read_debug.pyを修正
+baseとstructはそのまま辞書に追加していく
+arrayとpointerは参照する
+
+型名削除
+
+printstructの追加
+- structのメンバ及びその値，型をすべて表示
+
+!= を追加
+
+char の表示はシングルクオートで囲む
+\nとかは
+ほかは16進数で出す
+
+
+
+
+
+================
+read_debug.py
+================
+
+カーネルのデバッグ情報(vmlinux.debug)を読み込めるように修正する
+- const_type の１つにタグしかなくて下の情報が何もないDIEがある (b49)
+- それのせいで何もないリストを参照してしまいエラーを出している
+- 手で書き加えるか，そこだけスルーするかしないとまずい
+- 手で書き加える場合は参照をたどっていき実際のソースで確認しないといけない
+問題のDIE : b49
+
+b49を参照するものを探す
+  [   b43]    pointer_type
+             byte_size            (data1) 8
+             type                 (ref4) [   b49]
+b49型のポインタ
+
+b49型のポインタを使うものを探す
+-> b43を参照するものを探す
+ [   b33]    subroutine_type
+             prototyped           (flag_present) はい
+             sibling              (ref4) [   b43]
+ [   b38]      formal_parameter
+               type                 (ref4) [   b43]
+ [   b3d]      formal_parameter
+               type                 (ref4) [    a4]
+b33の関数型の第一引数がb43型
+
+b33を参照するものを探す
+ [   b4a]    pointer_type
+             byte_size            (data1) 8
+             type                 (ref4) [   b33]
+b33型のポインタ (関数ポインタ)
+
+b4aを参照するものを探す
+pv_cpu_ops構造体のset_ldtメンバ
+  void (*set_ldt)(const void *desc, unsigned entries);
+
+void*型だった
+
+結論
+void の時はtypeの行そのものが無くなる
+
+void* の場合
+ [    6c]    pointer_type
+             byte_size            (data1) 8
+
+const void* の場合
+ [    a4]    pointer_type
+             byte_size            (data1) 8
+             type                 (ref4) [    aa]
+ [    aa]    const_type
+
+
+関数ポインタ型の対応
+void型の対応
+- typeD["0"] = ["base", "void", 8]をtypeD作成前に行う
+- 今後pointerやconstなのに参照先が記載されていないものはvoidとして"0"を参照するようにした
+
+array_typeのsubrange_typeにupper_boundが記載されていない場合がある
+xregs_state構造体のextended_state_areaメンバ
+	u8	extended_state_area[0];
+
+結論
+配列サイズ0の場合はupper_boundの行がなくなる
+ [  24fa]      subrange_type
+               type                 (ref4) [    8b]
+
+対策
+array_typeのデフォルトサイズは0にしておく
+
+union_typeへの対応
+write infocにunionの場合を加える
+
+volatile_typeへの対応
+typedef, constと同じ
+
+enumeration_typeへの対応
+
+
+typesの重複を削除
+- typedefのせいで重複が発生
+
+
+
+====
+テストケース
+
+ggg
+
+
+(define $task top)
+(while 1 
+(print (-> $task val))
+(define $task (-> $task next))
+(if (= $task top) (break))
+)
+
+(define $task top)
+(while 1 (print (-> $task val)) (define $task (-> $task next)) (if (= $task top) (break)))
+
+(define $task top)
+(while 1 (print (-> $task val)) (define $task (-> $task next)) (if (= $task 0) (break)))
+
+
+(= (. c3 next) 0)
+
+(printstring cp)
+(printstring ca)
+
+(printarray ca)
+(printarray ia)
+
+(printstruct ito)
+(printstruct (. tokyo kyu))
+(printstruct (. tokyo pp))
+(printstruct (deref (. tokyo pp)))
+
+libvmiでカーネル覗く準備
+コンパイルとか

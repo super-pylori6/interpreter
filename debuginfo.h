@@ -16,13 +16,14 @@
 #define _LONG_LONG_INT          0xc
 #define _LONG_LONG_UNSIGNED_INT 0xd
 #define _UNION_QUIZ             0xe
-#define _STRUCT_PERSON          0xf
-#define _STRUCT_KYUUYO          0x10
-#define _STRUCT_SYAIN_DT        0x11
+#define _ENUM_COLOR             0xf
+#define _STRUCT_PERSON          0x10
+#define _STRUCT_KYUUYO          0x11
+#define _STRUCT_SYAIN_DT        0x12
 #define _FUNCTION               0x0
-#define _STRUCT_CELL            0x12
-#define _DOUBLE                 0x13
-#define _FLOAT                  0x14
+#define _STRUCT_CELL            0x13
+#define _DOUBLE                 0x14
+#define _FLOAT                  0x15
 
 struct gvarinfo {
     int tidx;
@@ -41,7 +42,8 @@ enum type {
     pointer,
     array,
     structure,
-    uni
+    uni,
+    enumeration,
 };
 
 struct typeinfo {
@@ -63,8 +65,8 @@ char* get_typename(int tbit);
 extern struct gvarinfo gvars[16];
 extern struct memberinfo person[7];
 extern struct memberinfo kyuuyo[4];
-extern struct memberinfo syain_dt[7];
+extern struct memberinfo syain_dt[8];
 extern struct memberinfo cell[2];
-extern struct typeinfo types[37];
+extern struct typeinfo types[38];
 
 #endif
