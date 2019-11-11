@@ -15,7 +15,6 @@
 #define _CHAR                   0xb
 #define _LONG_LONG_INT          0xc
 #define _LONG_LONG_UNSIGNED_INT 0xd
-#define _VOID                   0x1
 #define _UNION_QUIZ             0xe
 #define _STRUCT_PERSON          0xf
 #define _STRUCT_KYUUYO          0x10

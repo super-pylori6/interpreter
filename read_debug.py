@@ -32,8 +32,8 @@ structl_all = []
 unionl_all = []
 gvarl_all = []
 numD = {}
-type_bit_dict = {}
-p_type_bit_dict = {}
+bitD = {}
+p_bitD = {}
 
 args = sys.argv
 if len(args) != 2:
@@ -75,7 +75,6 @@ def getgvarname(line):
     gvarname_m = re.search("\<.*\>", line.rstrip('\n'))
     gvarname = re.sub("[\<\>]", "", gvarname_m.group())
     return gvarname
-
 
 def print_gvar():
     print("struct gvar gvars[" + str(len(gvarl_all)) + "] = {")
@@ -136,7 +135,7 @@ def write_infoc():
     info_c.append("  case _VOID:")
     info_c.append("    return \"void\";")
     
-    for k in p_type_bit_dict.keys():
+    for k in p_bitD.keys():
         if typeD[k][1] == "function" or typeD[k][1] == "void":
             continue
         s = "  case _" + typeD[k][1].upper().replace(' ', '_') + ":"
@@ -243,10 +242,10 @@ def write_infoh():
     info_h.append("")
 
     info_h.append("#define _FUNCTION" + " " * (len("LONG_LONG_UNSIGNED_INT") - len("FUNCTION") + 1) +"0x0")
-    for k in p_type_bit_dict.keys():
+    for k in p_bitD.keys():
         s = "#define "
         s = s + "_" + typeD[k][1].upper().replace(' ', '_') + " " * (len("LONG_LONG_UNSIGNED_INT") - len(typeD[k][1]) + 1)
-        s = s + p_type_bit_dict[k]
+        s = s + p_bitD[k]
         info_h.append(s)
     info_h.append("")
     
@@ -388,13 +387,19 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
                 offset = getoffset(line)
                 tag = re.sub("_type", "", tag)
                 typeD[offset] = [tag, "0", 8]
-                refD[offset] = 0
+                refD[offset] = 1
             elif tag == "volatile_type":
                 MODE = VOLATILE_TYPE
                 offset = getoffset(line)
                 tag = re.sub("_type", "", tag)
                 typeD[offset] = [tag, "0", 8]
-                refD[offset] = 0
+                refD[offset] = 1
+            elif tag == "typedef" :
+                MODE = TYPEDEF
+                offset = getoffset(line)
+                tag = re.sub("_type", "", tag)
+                typeD[offset] = [tag, "0", 8]
+                refD[offset] = 1
             elif tag == "pointer_type":
                 MODE = POINTER_TYPE
                 offset = getoffset(line)
@@ -414,10 +419,6 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
                 refD[offset] = 1
             elif tag == "subrange_type" :
                 MODE = SUBRANGE_TYPE
-            elif tag == "typedef" :
-                MODE = TYPEDEF
-                offset = getoffset(line)
-                datatype = None
             elif tag == "structure_type":
                 MODE = STRUCTURE_TYPE
                 offset = getoffset(line)
@@ -445,12 +446,12 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
                 refD[offset] = 0
                 #print(typeD[offset])
 
-        elif MODE == CONST_TYPE or MODE == VOLATILE_TYPE:
+        elif MODE == CONST_TYPE or MODE == VOLATILE_TYPE or MODE == TYPEDEF:
             if re.match(" *type ", line):
                 datatype = gettype(line)
-                refD[offset] = 1
                 typeD[offset] = [tag, datatype]
-                                
+                refD[offset] = 1
+
         elif MODE == POINTER_TYPE:
             if re.match(" *byte_size ", line):
                 size = getsize(line)
@@ -471,14 +472,6 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
                 arraysize = getarraysize(line)
                 typeD[offset][4] = arraysize
                 
-        elif MODE == TYPEDEF:
-            if re.match(" *type ", line):
-                datatype = gettype(line)
-
-            if datatype is not None:
-                typeD[offset] = [tag, datatype]
-                refD[offset] = 1
- 
         elif MODE == STRUCTURE_TYPE:
             if re.match(" *name ", line):
                 name = getname(line)
@@ -567,27 +560,27 @@ refD :: 辞書型
 """
 
 
-print("make type_bit_dict")
+print("make bitD")
 
 # 型とビットの辞書作成
 cnt = 2
 for k in typeD.keys():
     if typeD[k][0] == "base":
         if typeD[k][1] == "function":
-            type_bit_dict[k] = p_type_bit_dict[k] = hex(0)
+            bitD[k] = p_bitD[k] = hex(0)
         elif typeD[k][1] == "void":
-            type_bit_dict[k] = p_type_bit_dict[k] = hex(1)
+            bitD[k] = p_bitD[k] = hex(1)
         else:
-            type_bit_dict[k] = p_type_bit_dict[k] = hex(cnt)
+            bitD[k] = p_bitD[k] = hex(cnt)
             cnt = cnt + 1
     elif typeD[k][0] == "structure":
-        type_bit_dict[k] = p_type_bit_dict[k] = hex(cnt)
+        bitD[k] = p_bitD[k] = hex(cnt)
         cnt = cnt + 1
     elif typeD[k][0] == "union":
-        type_bit_dict[k] = p_type_bit_dict[k] = hex(cnt)
+        bitD[k] = p_bitD[k] = hex(cnt)
         cnt = cnt + 1
     elif typeD[k][0] == "subroutine":
-        type_bit_dict[k] = p_type_bit_dict[k] = hex(0)
+        bitD[k] = p_bitD[k] = hex(0)
 
 
 
@@ -601,7 +594,7 @@ for k in typeD.keys():
             typeD[k][1] = typeD[typeD[k][1]][1]
             continue
 
-        type_bit_dict[k] = type_bit_dict[typeD[k][1]]
+        bitD[k] = bitD[typeD[k][1]]
         
         if typeD[k][0] == "typedef":
             typeD[k] = typeD[typeD[k][1]]
@@ -649,7 +642,7 @@ for i, k in enumerate(typeD.keys()):
 #pprint.pprint(numD)
 
 
-print("make structl")
+print("make structl and unionl")
 
 # 構造体情報の取得
 with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
