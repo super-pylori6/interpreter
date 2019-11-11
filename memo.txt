@@ -135,6 +135,9 @@ array_typeのデフォルトサイズは0にしておく
 union_typeへの対応
 write infocにunionの場合を加える
 
+volatile_typeへの対応
+typedef, constと同じ
+
 typesの重複を削除
 - typedefのせいで重複が発生
 

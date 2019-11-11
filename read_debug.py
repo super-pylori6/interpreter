@@ -18,8 +18,10 @@ STRUCT_MEMBER = 10
 UNION_MEMBER = 11
 VARIABLE = 12
 SUBROUTINE_TYPE = 13
+VOLATILE_TYPE = 14
 NONE = 100
 MODE = TAG
+
 TYPE_GET = 0
 
 MODEM = TAG
@@ -385,9 +387,14 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
                 MODE = CONST_TYPE
                 offset = getoffset(line)
                 tag = re.sub("_type", "", tag)
-                typeD[offset] = ["base", "void", 8]
+                typeD[offset] = [tag, "0", 8]
                 refD[offset] = 0
-                #if offset == "b49": MODE = NONE
+            elif tag == "volatile_type":
+                MODE = VOLATILE_TYPE
+                offset = getoffset(line)
+                tag = re.sub("_type", "", tag)
+                typeD[offset] = [tag, "0", 8]
+                refD[offset] = 0
             elif tag == "pointer_type":
                 MODE = POINTER_TYPE
                 offset = getoffset(line)
@@ -438,12 +445,12 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
                 refD[offset] = 0
                 #print(typeD[offset])
 
-        elif MODE == CONST_TYPE:
+        elif MODE == CONST_TYPE or MODE == VOLATILE_TYPE:
             if re.match(" *type ", line):
                 datatype = gettype(line)
                 refD[offset] = 1
                 typeD[offset] = [tag, datatype]
-                
+                                
         elif MODE == POINTER_TYPE:
             if re.match(" *byte_size ", line):
                 size = getsize(line)
@@ -599,6 +606,8 @@ for k in typeD.keys():
         if typeD[k][0] == "typedef":
             typeD[k] = typeD[typeD[k][1]]
         elif typeD[k][0] == "const":
+            typeD[k] = typeD[typeD[k][1]]
+        elif typeD[k][0] == "volatile":
             typeD[k] = typeD[typeD[k][1]]
         elif typeD[k][0] == "pointer":
             if typeD[typeD[k][1]][0] == "pointer":
