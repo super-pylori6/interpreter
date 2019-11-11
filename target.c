@@ -17,6 +17,13 @@ void add(void* x, const void* y){
   return;
 }
 
+union quiz {
+  int a;
+  int b;
+  int c;
+};
+
+union quiz q1 = {.a=1};
 
 typedef int newint;
 typedef newint newnewint;

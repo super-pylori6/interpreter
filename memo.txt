@@ -120,6 +120,20 @@ void型の対応
 - typeD["0"] = ["base", "void", 8]をtypeD作成前に行う
 - 今後pointerやconstなのに参照先が記載されていないものはvoidとして"0"を参照するようにした
 
+array_typeのsubrange_typeにupper_boundが記載されていない場合がある
+xregs_state構造体のextended_state_areaメンバ
+	u8	extended_state_area[0];
+
+結論
+配列サイズ0の場合はupper_boundの行がなくなる
+ [  24fa]      subrange_type
+               type                 (ref4) [    8b]
+
+対策
+array_typeのデフォルトサイズは0にしておく
+
+union_typeへの対応
+write infocにunionの場合を加える
 
 typesの重複を削除
 - typedefのせいで重複が発生

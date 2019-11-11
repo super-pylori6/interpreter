@@ -3,7 +3,6 @@
 
 #define _FUNCTION               0x0
 #define _VOID                   0x1
-#define _VOID                   0x1
 #define _LONG_UNSIGNED_INT      0x2
 #define _UNSIGNED_CHAR          0x3
 #define _SHORT_UNSIGNED_INT     0x4
@@ -17,13 +16,14 @@
 #define _LONG_LONG_INT          0xc
 #define _LONG_LONG_UNSIGNED_INT 0xd
 #define _VOID                   0x1
-#define _STRUCT_PERSON          0xe
-#define _STRUCT_KYUUYO          0xf
-#define _STRUCT_SYAIN_DT        0x10
+#define _UNION_QUIZ             0xe
+#define _STRUCT_PERSON          0xf
+#define _STRUCT_KYUUYO          0x10
+#define _STRUCT_SYAIN_DT        0x11
 #define _FUNCTION               0x0
-#define _STRUCT_CELL            0x11
-#define _DOUBLE                 0x12
-#define _FLOAT                  0x13
+#define _STRUCT_CELL            0x12
+#define _DOUBLE                 0x13
+#define _FLOAT                  0x14
 
 struct gvarinfo {
     int tidx;
@@ -41,7 +41,8 @@ enum type {
     base,
     pointer,
     array,
-    structure
+    structure,
+    uni
 };
 
 struct typeinfo {
@@ -50,21 +51,21 @@ struct typeinfo {
     int bytesize;
     union {
         int saki; //pointer
-        int memnum; //structure
+        int memnum; //structure, union
     };
     union {
         int pcount; //pointer
         int arraysize; //array
-        struct memberinfo* mem; //structure
+        struct memberinfo* mem; //structure, union
     };
 };
 
 char* get_typename(int tbit);
-extern struct gvarinfo gvars[15];
+extern struct gvarinfo gvars[16];
 extern struct memberinfo person[7];
 extern struct memberinfo kyuuyo[4];
 extern struct memberinfo syain_dt[7];
 extern struct memberinfo cell[2];
-extern struct typeinfo types[36];
+extern struct typeinfo types[37];
 
 #endif

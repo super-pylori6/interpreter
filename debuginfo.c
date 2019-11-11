@@ -30,6 +30,8 @@ char* get_typename(int tbit){
     return "long long int";
   case _LONG_LONG_UNSIGNED_INT:
     return "long long unsigned int";
+  case _UNION_QUIZ:
+    return "union quiz";
   case _STRUCT_PERSON:
     return "struct person";
   case _STRUCT_KYUUYO:
@@ -47,22 +49,23 @@ char* get_typename(int tbit){
   }
 }
 
-struct gvarinfo gvars[15] = {
+struct gvarinfo gvars[16] = {
     {7, "ggg", 0x601060},
     {8, "hhh", 0x601068},
     {15, "p", 0x6011c0},
     {15, "q", 0x6011c8},
-    {34, "ia", 0x601070},
+    {35, "ia", 0x601070},
     {14, "c", 0x400678},
-    {35, "ca", 0x601080},
+    {36, "ca", 0x601080},
     {11, "cp", 0x601090},
-    {22, "tanaka", 0x6010a0},
-    {22, "ito", 0x6010e0},
-    {24, "tokyo", 0x601120},
-    {29, "c1", 0x601180},
-    {29, "c3", 0x601190},
-    {29, "c2", 0x6011a0},
-    {30, "top", 0x6011b0}
+    {20, "q1", 0x601098},
+    {23, "tanaka", 0x6010a0},
+    {23, "ito", 0x6010e0},
+    {25, "tokyo", 0x601120},
+    {30, "c1", 0x601180},
+    {30, "c3", 0x601190},
+    {30, "c2", 0x6011a0},
+    {31, "top", 0x6011b0}
 };
 
 struct memberinfo person[7] = {
@@ -71,8 +74,8 @@ struct memberinfo person[7] = {
     {7, "age", 12},
     {11, "add", 16},
     {11, "job", 24},
-    {20, "tmp", 32},
-    {21, "zzz", 36}
+    {21, "tmp", 32},
+    {22, "zzz", 36}
 };
 
 struct memberinfo kyuuyo[4] = {
@@ -85,19 +88,25 @@ struct memberinfo kyuuyo[4] = {
 struct memberinfo syain_dt[7] = {
     {8, "no", 0},
     {13, "name", 8},
-    {25, "yaku", 28},
+    {26, "yaku", 28},
     {7, "nensu", 40},
-    {23, "kyu", 48},
-    {26, "pp", 80},
-    {28, "func", 88}
+    {24, "kyu", 48},
+    {27, "pp", 80},
+    {29, "func", 88}
 };
 
 struct memberinfo cell[2] = {
     {7, "val", 0},
-    {30, "next", 8}
+    {31, "next", 8}
 };
 
-struct typeinfo types[36] = {
+struct memberinfo quiz[3] = {
+    {7, "a", 0},
+    {7, "b", 0},
+    {7, "c", 0}
+};
+
+struct typeinfo types[37] = {
     {base, _VOID, 8},
     {base, _LONG_UNSIGNED_INT, 8},
     {base, _UNSIGNED_CHAR, 1},
@@ -108,7 +117,7 @@ struct typeinfo types[36] = {
     {base, _INT, 4},
     {base, _LONG_INT, 8},
     {base, _SIZETYPE, 8},
-    {pointer, _VOID, 8, .saki=0, .pcount=0},
+    {pointer, _VOID, 8, .saki=0, .pcount=1},
     {pointer, _CHAR, 8, .saki=12, .pcount=1},
     {base, _CHAR, 1},
     {array, _CHAR, 20, .saki=12, .arraysize=20},
@@ -118,20 +127,21 @@ struct typeinfo types[36] = {
     {base, _LONG_LONG_UNSIGNED_INT, 8},
     {pointer, _VOID, 8, .saki=19, .pcount=1},
     {base, _VOID, 8},
+    {uni, _UNION_QUIZ, 4, .memnum=3, .mem=quiz},
     {base, _INT, 4},
     {base, _INT, 4},
     {structure, _STRUCT_PERSON, 40, .memnum=7, .mem=person},
     {structure, _STRUCT_KYUUYO, 32, .memnum=4, .mem=kyuuyo},
     {structure, _STRUCT_SYAIN_DT, 96, .memnum=7, .mem=syain_dt},
     {array, _CHAR, 10, .saki=12, .arraysize=10},
-    {pointer, _STRUCT_PERSON, 8, .saki=22, .pcount=1},
+    {pointer, _STRUCT_PERSON, 8, .saki=23, .pcount=1},
     {base, _FUNCTION, 8},
-    {pointer, _FUNCTION, 8, .saki=27, .pcount=1},
+    {pointer, _FUNCTION, 8, .saki=28, .pcount=1},
     {structure, _STRUCT_CELL, 16, .memnum=2, .mem=cell},
-    {pointer, _STRUCT_CELL, 8, .saki=29, .pcount=1},
+    {pointer, _STRUCT_CELL, 8, .saki=30, .pcount=1},
     {base, _DOUBLE, 8},
     {base, _FLOAT, 4},
-    {array, _STRUCT_SYAIN_DT, 1920, .saki=24, .arraysize=20},
+    {array, _STRUCT_SYAIN_DT, 1920, .saki=25, .arraysize=20},
     {array, _INT, 16, .saki=7, .arraysize=4},
     {array, _CHAR, 13, .saki=12, .arraysize=13}
 };

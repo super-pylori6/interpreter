@@ -12,19 +12,24 @@ ARRAY_TYPE = 4
 SUBRANGE_TYPE = 5
 TYPEDEF = 6
 STRUCTURE_TYPE = 7
-MEMBER = 8
-VARIABLE = 9
-SUBROUTINE_TYPE = 10
+UNION_TYPE = 8
+MEMBER = 9
+STRUCT_MEMBER = 10
+UNION_MEMBER = 11
+VARIABLE = 12
+SUBROUTINE_TYPE = 13
 NONE = 100
 MODE = TAG
 TYPE_GET = 0
 
+MODEM = TAG
 
 typeD = {} # 辞書：.debugのオフセットと
 refD = {}
-struct_list_all = []
-gvar_list_all = []
-offset_num_dict = {}
+structl_all = []
+unionl_all = []
+gvarl_all = []
+numD = {}
 type_bit_dict = {}
 p_type_bit_dict = {}
 
@@ -71,14 +76,14 @@ def getgvarname(line):
 
 
 def print_gvar():
-    print("struct gvar gvars[" + str(len(gvar_list_all)) + "] = {")
-    for l in gvar_list_all:
+    print("struct gvar gvars[" + str(len(gvarl_all)) + "] = {")
+    for l in gvarl_all:
         print("    {" + str(l[0]) + ", " + "\"" + l[1] + "\"" + ", " + l[2] + "}", end="")
-        if l != gvar_list_all[-1]: print(",")
+        if l != gvarl_all[-1]: print(",")
         else: print("\n};\n")
 
 def print_memberinfo():
-    for l in struct_list_all:
+    for l in structl_all:
         print("struct memberinfo " + l[0] + "[" + str(len(l)-1) + "] = {")
         for m in l[1:]:
             print("    {" + str(m[0])  + ", " + "\"" + m[1] + "\"" + ", " +  str(m[2]) + "}", end="")
@@ -94,9 +99,9 @@ def print_structinfo():
     print("};\n")
 
     print("struct structinfo structinfos[] = {")
-    for l in struct_list_all:
+    for l in structl_all:
         print("    {" + "\"" + l[0] + "\""  + ", " + str(len(l)-1) + ", " + l[0] + "}", end="")
-        if l != struct_list_all[-1]: print(",")
+        if l != structl_all[-1]: print(",")
         else: print("\n};\n")
 
 def print_typeinfo():
@@ -106,11 +111,11 @@ def print_typeinfo():
         if v[0] == "base":
             print(v[0] + ", \"" + v[1] + "\", " + str(v[2]) + "}", end="")
         elif v[0] == "pointer":
-            print(v[0] + ", \"" + v[1] + "\", " + str(v[2]) + ", .saki=" + str(offset_num_dict[v[3]]) + "}", end="")
+            print(v[0] + ", \"" + v[1] + "\", " + str(v[2]) + ", .saki=" + str(numD[v[3]]) + "}", end="")
         elif v[0] == "array":
             print(v[0] + ", \"" + v[1] + "\", " + str(v[2]) + ", .arraysize=" + str(v[3]) + "}", end="")
         elif v[0] == "structure":
-            for l in struct_list_all:
+            for l in structl_all:
                 if l[0] == v[1].split(" ")[1]:
                     print(v[0] + ", \"" + v[1] + "\", " + str(v[2]) + ", .memnum=" + str(len(l)-1) + ", .mem=" + v[1].split(" ")[1] + "}", end="")
         if k != list(typeD.keys())[-1]: print(",")
@@ -143,17 +148,28 @@ def write_infoc():
     info_c.append("}")
     info_c.append("")
         
-    info_c.append("struct gvarinfo gvars[" + str(len(gvar_list_all)) + "] = {")
-    for l in gvar_list_all:
+    info_c.append("struct gvarinfo gvars[" + str(len(gvarl_all)) + "] = {")
+    for l in gvarl_all:
         s = "    {" + str(l[0]) + ", " + "\"" + l[1] + "\"" + ", " + l[2] + "}"
-        if l != gvar_list_all[-1]:
+        if l != gvarl_all[-1]:
             info_c.append(s + ",")
         else:
             info_c.append(s)
     info_c.append("};")
     info_c.append("")
     
-    for l in struct_list_all:
+    for l in structl_all:
+        info_c.append("struct memberinfo " + l[0] + "[" + str(len(l)-1) + "] = {")
+        for m in l[1:]:
+            s = "    {" + str(m[0])  + ", " + "\"" + m[1] + "\"" + ", " +  str(m[2]) + "}"
+            if m != l[-1]:
+                info_c.append(s + ",")
+            else:
+                info_c.append(s)
+        info_c.append("};")
+        info_c.append("")
+
+    for l in unionl_all:
         info_c.append("struct memberinfo " + l[0] + "[" + str(len(l)-1) + "] = {")
         for m in l[1:]:
             s = "    {" + str(m[0])  + ", " + "\"" + m[1] + "\"" + ", " +  str(m[2]) + "}"
@@ -170,26 +186,39 @@ def write_infoc():
             s = "    {" + v[0] + ", "
             s = s + "_" + v[1].upper().replace(' ', '_') + ", "
             s = s + str(v[2]) + "}"
+            
         elif v[0] == "pointer":
             s = "    {" + v[0] + ", "
             s = s + "_" + v[1].upper().replace(' ', '_') + ", "
             s = s + str(v[2]) + ", "
-            s = s + ".saki=" + str(offset_num_dict[v[3]]) + ", "
+            s = s + ".saki=" + str(numD[v[3]]) + ", "
             s = s + ".pcount=" + str(v[4]) + "}"
+            
         elif v[0] == "array":
             s = "    {" + v[0] + ", "
             s = s + "_" + v[1].upper().replace(' ', '_') + ", "
             s = s + str(v[2]) + ", "
-            s = s + ".saki=" + str(offset_num_dict[v[3]]) + ", "
+            s = s + ".saki=" + str(numD[v[3]]) + ", "
             s = s + ".arraysize=" + str(v[4]) + "}"
+            
         elif v[0] == "structure":
-            for l in struct_list_all:
+            for l in structl_all:
                 if l[0] == v[1].split(" ")[1]:
                     s = "    {" + v[0] + ", "
                     s = s + "_" + v[1].upper().replace(' ', '_') + ", "
                     s = s + str(v[2]) + ", "
                     s = s + ".memnum=" + str(len(l)-1) + ", "
                     s = s + ".mem=" + v[1].split(" ")[1] + "}"
+                    
+        elif v[0] == "union":
+            for l in unionl_all:
+                if l[0] == v[1].split(" ")[1]:
+                    s = "    {" + v[0][0:3] + ", "
+                    s = s + "_" + v[1].upper().replace(' ', '_') + ", "
+                    s = s + str(v[2]) + ", "
+                    s = s + ".memnum=" + str(len(l)-1) + ", "
+                    s = s + ".mem=" + v[1].split(" ")[1] + "}"
+                    
         elif v[0] == "subroutine":
             s = "    {" + v[0] + ", "
             s = s + "_" + v[1].upper().replace(' ', '_') + ", "
@@ -212,9 +241,10 @@ def write_infoh():
     info_h.append("")
 
     info_h.append("#define _FUNCTION" + " " * (len("LONG_LONG_UNSIGNED_INT") - len("FUNCTION") + 1) +"0x0")
-    info_h.append("#define _VOID" + " " * (len("LONG_LONG_UNSIGNED_INT") - len("VOID") + 1) + "0x1")
     for k in p_type_bit_dict.keys():
-        s = "#define _" + typeD[k][1].upper().replace(' ', '_') + " " * (len("LONG_LONG_UNSIGNED_INT") - len(typeD[k][1]) + 1) + p_type_bit_dict[k]
+        s = "#define "
+        s = s + "_" + typeD[k][1].upper().replace(' ', '_') + " " * (len("LONG_LONG_UNSIGNED_INT") - len(typeD[k][1]) + 1)
+        s = s + p_type_bit_dict[k]
         info_h.append(s)
     info_h.append("")
     
@@ -234,7 +264,8 @@ def write_infoh():
     info_h.append("    base,")
     info_h.append("    pointer,")
     info_h.append("    array,")
-    info_h.append("    structure")
+    info_h.append("    structure,")
+    info_h.append("    uni")
     info_h.append("};")
     info_h.append("")
     info_h.append("struct typeinfo {")
@@ -243,18 +274,18 @@ def write_infoh():
     info_h.append("    int bytesize;")
     info_h.append("    union {")
     info_h.append("        int saki; //pointer")
-    info_h.append("        int memnum; //structure")
+    info_h.append("        int memnum; //structure, union")
     info_h.append("    };")
     info_h.append("    union {")
     info_h.append("        int pcount; //pointer")
     info_h.append("        int arraysize; //array")
-    info_h.append("        struct memberinfo* mem; //structure")
+    info_h.append("        struct memberinfo* mem; //structure, union")
     info_h.append("    };")
     info_h.append("};")
     info_h.append("")
     info_h.append("char* get_typename(int tbit);")
-    info_h.append("extern struct gvarinfo gvars[" + str(len(gvar_list_all)) + "];")
-    for l in struct_list_all:
+    info_h.append("extern struct gvarinfo gvars[" + str(len(gvarl_all)) + "];")
+    for l in structl_all:
         info_h.append("extern struct memberinfo " + l[0] + "[" + str(len(l)-1) + "];")
     info_h.append("extern struct typeinfo types[" + str(len(typeD)) + "];")
     info_h.append("")
@@ -336,7 +367,8 @@ def write_infoh():
 print("make typeD")
 
 typeD["0"] = ["base", "void", 8]
-refD["0"]   = 0
+refD["0"]  = 0
+
 # 型情報の辞書の作成
 with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
     for line in debug_info:
@@ -363,12 +395,16 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
                 size = 8
                 tag = re.sub("_type", "", tag)
                 pcnt = 0
-                typeD[offset] = [tag, datatype, size, "0", pcnt]
-                refD[offset] = 0
+                typeD[offset] = [tag, "0", size, "0", pcnt]
+                refD[offset] = 1
             elif tag == "array_type":
                 MODE = ARRAY_TYPE
                 offset = getoffset(line)
-                size = datatype = None
+                size = 0
+                tag = re.sub("_type", "", tag)
+                datatype = "void"
+                typeD[offset] = [tag, "0", size, "0", size]
+                refD[offset] = 1
             elif tag == "subrange_type" :
                 MODE = SUBRANGE_TYPE
             elif tag == "typedef" :
@@ -377,6 +413,9 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
                 datatype = None
             elif tag == "structure_type":
                 MODE = STRUCTURE_TYPE
+                offset = getoffset(line)
+            elif tag == "union_type":
+                MODE = UNION_TYPE
                 offset = getoffset(line)
             elif tag == "subroutine_type":
                 MODE = SUBROUTINE_TYPE
@@ -417,21 +456,13 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
         elif MODE == ARRAY_TYPE:
             if re.match(" *type ", line):
                 datatype = gettype(line)
-
-            if datatype is not None:
-                tag = re.sub("_type", "", tag)
-                typeD[offset] = [tag, datatype, datatype]
+                typeD[offset][1] = typeD[offset][3] = datatype
                 refD[offset] = 1
 
         elif MODE == SUBRANGE_TYPE:
             if re.match(" *upper_bound ", line):
-                size = getarraysize(line)
-
-            if size is not None and datatype is not None:
-                #typeD[offset].append(0)
-                typeD[offset].insert(2, 0)
-                #typeD[offset].append(size)
-                typeD[offset].insert(4, size)
+                arraysize = getarraysize(line)
+                typeD[offset][4] = arraysize
                 
         elif MODE == TYPEDEF:
             if re.match(" *type ", line):
@@ -440,7 +471,7 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
             if datatype is not None:
                 typeD[offset] = [tag, datatype]
                 refD[offset] = 1
-
+ 
         elif MODE == STRUCTURE_TYPE:
             if re.match(" *name ", line):
                 name = getname(line)
@@ -450,6 +481,17 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
             if name is not None and size is not None:
                 tag = re.sub("_type", "", tag)
                 typeD[offset] = [tag, "struct " + name, size]
+                refD[offset] = 0
+
+        elif MODE == UNION_TYPE:
+            if re.match(" *name ", line):
+                name = getname(line)
+            elif re.match(" *byte_size ", line):
+                size = getsize(line)
+
+            if name is not None and size is not None:
+                tag = re.sub("_type", "", tag)
+                typeD[offset] = [tag, "union " + name, size]
                 refD[offset] = 0
 
         elif MODE == SUBROUTINE_TYPE:
@@ -534,6 +576,9 @@ for k in typeD.keys():
     elif typeD[k][0] == "structure":
         type_bit_dict[k] = p_type_bit_dict[k] = hex(cnt)
         cnt = cnt + 1
+    elif typeD[k][0] == "union":
+        type_bit_dict[k] = p_type_bit_dict[k] = hex(cnt)
+        cnt = cnt + 1
     elif typeD[k][0] == "subroutine":
         type_bit_dict[k] = p_type_bit_dict[k] = hex(0)
 
@@ -563,7 +608,6 @@ for k in typeD.keys():
                 typeD[k][4] += 1
             typeD[k][1] = typeD[typeD[k][1]][1]
         elif typeD[k][0] == "array":
-            print(k, typeD[k])
             typeD[k][2] = typeD[k][4] * typeD[typeD[k][1]][2]
             typeD[k][1] = typeD[typeD[k][1]][1]
         refD[k] = 0
@@ -587,16 +631,16 @@ typeD :: 辞書型
 
 """
 
-print("make offset_num_dict")
+print("make numD")
 
 # オフセットと配列の添字の対応を作成
-offset_num_dict["0"] = 0
+#numD["0"] = 0
 for i, k in enumerate(typeD.keys()):
-    offset_num_dict[k] = i
-#pprint.pprint(offset_num_dict)
+    numD[k] = i
+#pprint.pprint(numD)
 
 
-print("make struct_list")
+print("make structl")
 
 # 構造体情報の取得
 with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
@@ -609,8 +653,17 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
             if tag == "structure_type":
                 MODE = STRUCTURE_TYPE
                 offset = getoffset(line)
-            elif tag == "member":
+            elif tag == "union_type":
+                MODE = UNION_TYPE
+                offset = getoffset(line)
+            elif tag == "member" and (MODE == STRUCTURE_TYPE or MODEM == STRUCT_MEMBER):
                 MODE = MEMBER
+                MODEM = STRUCT_MEMBER
+                structl.append([0, 0, "0"])
+            elif tag == "member" and (MODE == UNION_TYPE or MODEM == UNION_MEMBER):
+                MODE = MEMBER
+                MODEM = UNION_MEMBER
+                unionl.append([0, 0, "0"])
             elif tag == "subprogram":
                 break
             else:
@@ -620,23 +673,42 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
         elif MODE == STRUCTURE_TYPE:
             if re.match(" *name ", line):
                 structname = getname(line)
-                struct_list = [structname]
-                struct_list_all.append(struct_list)
+                structl = [structname]
+                structl_all.append(structl)
             continue
 
-        elif MODE == MEMBER:
+        elif MODE == UNION_TYPE:
             if re.match(" *name ", line):
-                membername = getname(line)
+                unionname = getname(line)
+                unionl = [unionname]
+                unionl_all.append(unionl)
+            continue
 
+        elif MODE == MEMBER and MODEM == STRUCT_MEMBER:
+            if re.match(" *name ", line):
+                mname = getname(line)
+                structl[-1][1] = mname
             elif re.match(" *type ", line):
-                membertype_offset = gettype(line)
-
+                mtype = gettype(line)
             elif re.match(" *data_member_location ", line):
-                member_offset_hex = re.sub(".*\(.*?\) ", "", line.rstrip('\n'))
-                member_offset = int(member_offset_hex, 16)
-                struct_list.append([offset_num_dict[membertype_offset], membername, member_offset])
+                moffset_hex = re.sub(".*\(.*?\) ", "", line.rstrip('\n'))
+                moffset = int(moffset_hex, 16)
+                structl[-1][0] = numD[mtype]
+                structl[-1][2] = moffset
+                #print(structl)
+                
+        elif MODE == MEMBER and MODEM == UNION_MEMBER:
+            if re.match(" *name ", line):
+                mname = getname(line)
+                unionl[-1][1] = mname
+            elif re.match(" *type ", line):
+                mtype = gettype(line)
+                unionl[-1][0] = numD[mtype]
+                
+#pprint.pprint(structl_all)
+#pprint.pprint(unionl_all)
 
-print("make gvar_list")
+print("make gvarl")
 
 # グローバル変数情報の取得
 with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
@@ -661,8 +733,8 @@ with open(READFILE, "r", encoding="utf-8_sig") as debug_info:
             elif re.match(" *\[.*\] addr", line) and TYPE_GET:
                 addr = getaddr(line)
                 gvarname = getgvarname(line)
-                gvar_list = [offset_num_dict[vartype_offset], gvarname, addr]
-                gvar_list_all.append(gvar_list)
+                gvarl = [numD[vartype_offset], gvarname, addr]
+                gvarl_all.append(gvarl)
                 TYPE_GET = 0
                 continue
 
@@ -683,7 +755,7 @@ write_infoc()
 print(READFILE)
 print("├─>" + WRITEFILE1)
 print("└─>" + WRITEFILE2)
-#pprint.pprint(struct_list_all)
-#pprint.pprint(gvar_list_all)
+#pprint.pprint(structl_all)
+#pprint.pprint(gvarl_all)
 
 

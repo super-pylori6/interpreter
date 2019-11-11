@@ -437,6 +437,10 @@ obj* get_struct(obj* o){
   return make_res(o->tidx, o->data);
 }
 
+obj* get_union(obj* o){
+  return make_res(o->tidx, o->data);
+}
+
 obj* get_gvar(obj* o){
   int tidx = o->tidx;
   if(types[tidx].kind == base){
@@ -450,6 +454,9 @@ obj* get_gvar(obj* o){
   }
   else if(types[tidx].kind == structure){
     return get_struct(o);
+  }
+  else if(types[tidx].kind == uni){
+    return get_union(o);
   }
   else{
     printf("[get_gvar] not defined");
@@ -1065,6 +1072,10 @@ void print_struct(long data, int tbit){
   printf("0x%lx :: %s", data, get_typename(tbit));
 }
 
+void print_union(long data, int tbit){
+  printf("0x%lx :: %s", data, get_typename(tbit));
+}
+
 void print_gvar(obj* o){
   if(types[o->tidx].kind == base){
     print_base(o->data, types[o->tidx].tbit);
@@ -1077,6 +1088,9 @@ void print_gvar(obj* o){
   }
   else if(types[o->tidx].kind == structure){
     print_struct(o->data, types[o->tidx].tbit);
+  }
+  else if(types[o->tidx].kind == uni){
+    print_union(o->data, types[o->tidx].tbit);
   }
   else{
     printf("[%s] not defined", __func__);
