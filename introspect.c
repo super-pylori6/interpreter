@@ -5,17 +5,81 @@
 #include <sysexits.h> // exit(EXIT_SUCCESS)
 #include "debuginfo.h"
 
+#include <glib.h>
+GHashTable *gtbl;
+
+//#include <glib-2.0/glib.h>
+
+
+/*
+char* get_typename(int tbit){
+  switch(tbit){
+  case _VOID:
+    return "void";
+  case _INT:
+    return "int";
+  case _CHAR:
+    return "char";
+  case _STRUCT_TASK_STRUCT:
+    return "struct task_struct";
+  case _STRUCT_LIST_HEAD:
+    return "struct list_head";
+  default:
+    return "";
+  }
+}
+
+struct gvarinfo gvars[1] = {
+    {6, "init_task", 0xffffffff81c15500},
+};
+
+struct memberinfo task_struct[3] = {
+    {1, "tasks", 0x290},
+    {3, "pid", 0x304},
+    {5, "comm", 0x4b0},
+};
+
+struct memberinfo list_head[2] = {
+    {2, "next", 0},
+    {2, "prev", 8},
+};
+
+struct typeinfo types[7] = {
+    {base, _VOID, 8},
+    {structure, _STRUCT_LIST_HEAD, 16, .memnum=2, .mem=list_head},
+    {pointer, _STRUCT_LIST_HEAD, 8, .saki=1, .pcount=1},
+    {base, _INT, 4},
+    {base, _CHAR, 1},
+    {array, _CHAR, 16, .saki=4, .arraysize=16},
+    {structure, _STRUCT_TASK_STRUCT, 6784, .memnum=3, .mem=task_struct},
+};
+*/
+
+
+
 #define PTRACE_ON
+//#define LIBVMI_ON
 
 #ifdef PTRACE_ON
 #include <sys/ptrace.h> // ptrace()
-#include <sys/wait.h> // waitpid()
 #endif
 
 #ifdef PTRACE_ON
 pid_t pid;
 #define SIZE 8
 #endif
+
+
+#ifdef LIBVMI_ON
+#include <libvmi/libvmi.h>
+#endif
+
+#ifdef LIBVMI_ON
+vmi_instance_t vmi;
+char* vmname;
+#define SIZE 8
+#endif
+
 
 #define SYMBOL_MAX_LEN 100
 
@@ -30,7 +94,7 @@ enum {
   GVAR,
   RES,
   RPAREN,
-  TRUE,
+  TTRUE,
   NIL,
   BREAK,
 };
@@ -70,9 +134,9 @@ typedef struct obj {
 } obj;
 
 obj* Rparen = &(obj){RPAREN};
-obj* True = &(obj){TRUE};
-obj* Nil = &(obj){NIL};
-obj* Break = &(obj){BREAK};
+obj* True = &(obj){TTRUE};
+static obj* Nil = &(obj){NIL};
+static obj* Break = &(obj){BREAK};
 
 // envで一括管理すれば消せそう
 obj *symbol_table;
@@ -232,32 +296,54 @@ obj* read_symbol(char c){
   return check_symbol(symbol);
 }
 
+void quit(void){
+#ifdef PTRACE_ON
+  int ret = ptrace(PTRACE_DETACH, pid, NULL, NULL);
+
+  if(ret != 0){
+    printf("[main] DETACH error\n");
+    exit(EXIT_FAILURE);
+  }
+#endif
+
+#ifdef LIBVMI_ON
+  vmi_resume_vm(vmi);
+  vmi_destroy(vmi);
+#endif
+  
+  exit(EXIT_SUCCESS);
+}
+
 void init(void){
   int ret;
   
 #ifdef PTRACE_ON
   ret = ptrace(PTRACE_ATTACH, pid, NULL, NULL);
-#endif
-  
+
   if(ret != 0){
     printf("[main] ATTACH error\n");
     exit(EXIT_FAILURE);
   }
-}
-
-void quit(void){
-  int ret;
-
-#ifdef PTRACE_ON
-  ret = ptrace(PTRACE_DETACH, pid, NULL, NULL);
 #endif
+
+#ifdef LIBVMI_ON
+  ret = vmi_init_complete(&vmi, vmname, VMI_INIT_DOMAINNAME, NULL,
+			  VMI_CONFIG_GLOBAL_FILE_ENTRY, NULL, NULL);
   
-  if(ret != 0){
-    printf("[main] DETACH error\n");
+  if(ret == VMI_FAILURE){
+    printf("[init] Failed to init LibVMI library.\n");
     exit(EXIT_FAILURE);
   }
+
+  ret = vmi_pause_vm(vmi);
   
-  exit(EXIT_SUCCESS);
+  if (ret != VMI_SUCCESS) {
+    printf("[init] Failed to pause VM\n");
+    quit();
+  } 
+  
+#endif
+
 }
 
 obj* read_s(void){
@@ -376,18 +462,19 @@ obj* eval(obj* env, obj* o){
   case PRIM:
   case GVAR:
   case RES:
-  case TRUE:
+  case TTRUE:
   case NIL:
   case BREAK:
     return o;
   case SYM:{
     obj* list_sym = lookup(env, o);
     if(list_sym == Nil){
+      int* gidx = g_hash_table_lookup(gtbl, o->symbol);
+      if(gidx){
+	return get_gvar(make_gvar(gvars[*gidx].tidx, gvars[*gidx].addr));
+      }
       printf("[eval] no symbol");
       return Nil;
-    }
-    else if(list_sym->cdr->type == GVAR){
-      return get_gvar(list_sym->cdr);
     }
     else{
       return list_sym->cdr;
@@ -419,6 +506,19 @@ long read_mem(int size, long addr){
 #ifdef PTRACE_ON
   return ptrace(PTRACE_PEEKDATA, pid, addr, NULL);
 #endif
+
+#ifdef LIBVMI_ON
+  long data;
+  size_t data_size;
+  int ret = vmi_read_va(vmi, addr, 0, size, &data, &data_size);
+
+  if (ret == VMI_FAILURE) {
+    printf("Failed to read memory\n");
+    quit();
+  }
+  return data;
+#endif
+  
 }
 
 obj* get_base(obj* o){
@@ -789,6 +889,7 @@ obj* printstringp(obj* o){
       }
     }
   }
+  return Nil;
 }
 
 obj* printstringa(obj* o){
@@ -995,14 +1096,15 @@ void define_primitive(obj* env){
   add_primitive(env, "printstruct", prim_printstruct);
 }
 
-
 void define_gvar(obj* env){
+  gtbl = g_hash_table_new(g_str_hash, g_str_equal);
   for(int i=0;i<sizeof(gvars)/sizeof(gvars[0]);i++){
-    obj* s = check_symbol(gvars[i].name);
-    obj* gvar = make_gvar(gvars[i].tidx, gvars[i].addr);
-    add_variable(env, s, gvar);
+    int* gidx = g_new(int, 1);
+    *gidx = i;
+    g_hash_table_insert(gtbl, gvars[i].name, gidx);
   }
 }
+
 
 //================
 // print
@@ -1149,7 +1251,7 @@ void print(obj* o){
   case RES:
     print_gvar(o);
     break;
-  case TRUE:
+  case TTRUE:
     printf("TRUE");
     break;
   case BREAK:
@@ -1162,16 +1264,20 @@ void print(obj* o){
   printf("\n");
 }
 
-
 int main(int argc, char **argv){  
   if(argc != 2){
     printf("[main] argc error");
     return 0;
   }
+
 #ifdef PTRACE_ON
   pid = atoi(argv[1]);
 #endif
-  
+
+#ifdef LIBVMI_ON
+  vmname = atoi(argv[1]);
+#endif
+
   symbol_table = Nil;
   obj* env = make_env(Nil, Nil);
   define_primitive(env);

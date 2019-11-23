@@ -138,9 +138,22 @@ write infocにunionの場合を加える
 volatile_typeへの対応
 typedef, constと同じ
 
+enumeration_typeへの対応
+
+structureの (多分unionも) nameがない場合がある
+この場合はメンバ情報の記述が終わった後にtypedefで名前が指定してある
+よってstructの名前がデフォルトの"void"だった場合は辞書の更新タイミングでtypedefの名前に書き換える
+
+debuginfo.hのビットのdefineでfunctionとvoidの量が多すぎる
+削除する
+
+
 typesの重複を削除
 - typedefのせいで重複が発生
 
+
+大域変数名を数値で扱う
+- 
 
 
 ====

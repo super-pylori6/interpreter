@@ -90,49 +90,28 @@ def write_infoc():
     info_c.append("char* get_typename(int tbit){")
     info_c.append("  switch(tbit){")
 
-    s = "  case _FUNCTION:"
-    s = s + " " * (len("LONG_LONG_UNSIGNED_INT") - len("function") + 1)
-    s = s + "return \"function\";"
-    info_c.append(s)
-
-    s = "  case _VOID:"
-    s = s + " " * (len("LONG_LONG_UNSIGNED_INT") - len("void") + 1)
-    s = s + "return \"void\";"
-    info_c.append(s)
+    info_c.append("  case _FUNCTION:")
+    info_c.append("    return \"function\";")
+    info_c.append("  case _VOID:")
+    info_c.append("    return \"void\";")
     
     for k in p_bitD.keys():
         if typeD[k][1] == "function" or typeD[k][1] == "void":
             continue
         s = "  case _" + typeD[k][1].upper().replace(' ', '_') + ":"
-        #info_c.append(s)
-        s = s + " " * (len("LONG_LONG_UNSIGNED_INT") - len(typeD[k][1]) + 1) + "return \"" + typeD[k][1] + "\";"
         info_c.append(s)
-
-    s = "  default:"
-    s = s + " " * len("LONG_LONG_UNSIGNED_INT")
-    s = s + "return \"\";"
-    info_c.append(s)
-    info_c.append("  }")
-    info_c.append("}")
-    info_c.append("")
-
-    info_c.append("char* get_gvarname(int gbit){")
-    info_c.append("  switch(gbit){")
-
-    for i, l in enumerate(gvarl_all):
-        s = "  case _" + l[1].upper() + ":"
-        s = s + " return \"" + l[1] + "\";"
-        info_c.append(s)
-    
+        s = typeD[k][1]
+        info_c.append("    return \"" + typeD[k][1] + "\";")
+        
+    info_c.append("  default:")
+    info_c.append("    return \"\";")
     info_c.append("  }")
     info_c.append("}")
     info_c.append("")
 
     info_c.append("struct gvarinfo gvars[" + str(len(gvarl_all)) + "] = {")
     for l in gvarl_all:
-        s = "    {" + str(l[0]) + ", "
-        s = s + "\"" + l[1] + "\"" + ", "
-        s = s + l[2] + "}"
+        s = "    {" + str(l[0]) + ", " + "\"" + l[1] + "\"" + ", " + l[2] + "}"
         if l != gvarl_all[-1]:
             info_c.append(s + ",")
         else:
@@ -240,12 +219,6 @@ def write_infoh():
         s = s + p_bitD[k]
         info_h.append(s)
     info_h.append("")
-
-    for i, l in enumerate(gvarl_all):
-        s = "#define "
-        s = s + "_" + l[1].upper() + " " + str(hex(i))
-        info_h.append(s)
-    info_h.append("")    
     
     info_h.append("struct gvarinfo {")
     info_h.append("    int tidx;")

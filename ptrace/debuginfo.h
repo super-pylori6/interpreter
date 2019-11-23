@@ -25,23 +25,6 @@
 #define _DOUBLE                 0x14
 #define _FLOAT                  0x15
 
-#define _GGG 0x0
-#define _HHH 0x1
-#define _P 0x2
-#define _Q 0x3
-#define _IA 0x4
-#define _C 0x5
-#define _CA 0x6
-#define _CP 0x7
-#define _Q1 0x8
-#define _TANAKA 0x9
-#define _ITO 0xa
-#define _TOKYO 0xb
-#define _C1 0xc
-#define _C3 0xd
-#define _C2 0xe
-#define _TOP 0xf
-
 struct gvarinfo {
     int tidx;
     char* name;

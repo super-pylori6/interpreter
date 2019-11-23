@@ -2,51 +2,52 @@
 
 char* get_typename(int tbit){
   switch(tbit){
-  case _FUNCTION:               return "function";
-  case _VOID:                   return "void";
-  case _LONG_UNSIGNED_INT:      return "long unsigned int";
-  case _UNSIGNED_CHAR:          return "unsigned char";
-  case _SHORT_UNSIGNED_INT:     return "short unsigned int";
-  case _UNSIGNED_INT:           return "unsigned int";
-  case _SIGNED_CHAR:            return "signed char";
-  case _SHORT_INT:              return "short int";
-  case _INT:                    return "int";
-  case _LONG_INT:               return "long int";
-  case _SIZETYPE:               return "sizetype";
-  case _CHAR:                   return "char";
-  case _LONG_LONG_INT:          return "long long int";
-  case _LONG_LONG_UNSIGNED_INT: return "long long unsigned int";
-  case _UNION_QUIZ:             return "union quiz";
-  case _ENUM_COLOR:             return "enum color";
-  case _STRUCT_PERSON:          return "struct person";
-  case _STRUCT_KYUUYO:          return "struct kyuuyo";
-  case _STRUCT_SYAIN_DT:        return "struct syain_dt";
-  case _STRUCT_CELL:            return "struct cell";
-  case _DOUBLE:                 return "double";
-  case _FLOAT:                  return "float";
-  default:                      return "";
-  }
-}
-
-char* get_gvarname(int gbit){
-  switch(gbit){
-  case _GGG: return "ggg";
-  case _HHH: return "hhh";
-  case _P: return "p";
-  case _Q: return "q";
-  case _IA: return "ia";
-  case _C: return "c";
-  case _CA: return "ca";
-  case _CP: return "cp";
-  case _Q1: return "q1";
-  case _TANAKA: return "tanaka";
-  case _ITO: return "ito";
-  case _TOKYO: return "tokyo";
-  case _C1: return "c1";
-  case _C3: return "c3";
-  case _C2: return "c2";
-  case _TOP: return "top";
-  default:                      return "";    
+  case _FUNCTION:
+    return "function";
+  case _VOID:
+    return "void";
+  case _LONG_UNSIGNED_INT:
+    return "long unsigned int";
+  case _UNSIGNED_CHAR:
+    return "unsigned char";
+  case _SHORT_UNSIGNED_INT:
+    return "short unsigned int";
+  case _UNSIGNED_INT:
+    return "unsigned int";
+  case _SIGNED_CHAR:
+    return "signed char";
+  case _SHORT_INT:
+    return "short int";
+  case _INT:
+    return "int";
+  case _LONG_INT:
+    return "long int";
+  case _SIZETYPE:
+    return "sizetype";
+  case _CHAR:
+    return "char";
+  case _LONG_LONG_INT:
+    return "long long int";
+  case _LONG_LONG_UNSIGNED_INT:
+    return "long long unsigned int";
+  case _UNION_QUIZ:
+    return "union quiz";
+  case _ENUM_COLOR:
+    return "enum color";
+  case _STRUCT_PERSON:
+    return "struct person";
+  case _STRUCT_KYUUYO:
+    return "struct kyuuyo";
+  case _STRUCT_SYAIN_DT:
+    return "struct syain_dt";
+  case _STRUCT_CELL:
+    return "struct cell";
+  case _DOUBLE:
+    return "double";
+  case _FLOAT:
+    return "float";
+  default:
+    return "";
   }
 }
 
