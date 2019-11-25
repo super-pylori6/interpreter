@@ -1,0 +1,10 @@
+(define $task init_task)
+
+(. $task pid)
+(. $task comm)
+
+(printstring (. $task comm))
+
+(. $task tasks)
+
+(. (. $task tasks) next)

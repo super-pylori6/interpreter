@@ -2,45 +2,6 @@
 #define _DEBUGINFO_H
 
 #define _FUNCTION               0x0
-#define _VOID                   0x1
-#define _LONG_UNSIGNED_INT      0x2
-#define _UNSIGNED_CHAR          0x3
-#define _SHORT_UNSIGNED_INT     0x4
-#define _UNSIGNED_INT           0x5
-#define _SIGNED_CHAR            0x6
-#define _SHORT_INT              0x7
-#define _INT                    0x8
-#define _LONG_INT               0x9
-#define _SIZETYPE               0xa
-#define _CHAR                   0xb
-#define _LONG_LONG_INT          0xc
-#define _LONG_LONG_UNSIGNED_INT 0xd
-#define _UNION_QUIZ             0xe
-#define _ENUM_COLOR             0xf
-#define _STRUCT_PERSON          0x10
-#define _STRUCT_KYUUYO          0x11
-#define _STRUCT_SYAIN_DT        0x12
-#define _FUNCTION               0x0
-#define _STRUCT_CELL            0x13
-#define _DOUBLE                 0x14
-#define _FLOAT                  0x15
-
-#define _GGG 0x0
-#define _HHH 0x1
-#define _P 0x2
-#define _Q 0x3
-#define _IA 0x4
-#define _C 0x5
-#define _CA 0x6
-#define _CP 0x7
-#define _Q1 0x8
-#define _TANAKA 0x9
-#define _ITO 0xa
-#define _TOKYO 0xb
-#define _C1 0xc
-#define _C3 0xd
-#define _C2 0xe
-#define _TOP 0xf
 
 struct gvarinfo {
     int tidx;
@@ -80,10 +41,6 @@ struct typeinfo {
 
 char* get_typename(int tbit);
 extern struct gvarinfo gvars[16];
-extern struct memberinfo person[7];
-extern struct memberinfo kyuuyo[4];
-extern struct memberinfo syain_dt[8];
-extern struct memberinfo cell[2];
-extern struct typeinfo types[38];
+extern struct typeinfo types[0];
 
 #endif

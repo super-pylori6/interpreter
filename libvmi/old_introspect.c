@@ -8,8 +8,8 @@
 #include <glib.h>
 GHashTable *gtbl;
 
-#define PTRACE_ON
-//#define LIBVMI_ON
+//#define PTRACE_ON
+#define LIBVMI_ON
 
 #ifdef PTRACE_ON
 #include <sys/ptrace.h> // ptrace()
@@ -252,7 +252,7 @@ void quit(void){
   int ret = ptrace(PTRACE_DETACH, pid, NULL, NULL);
 
   if(ret != 0){
-    printf("[%s] DETACH error\n", __func__);
+    printf("[main] DETACH error\n");
     exit(EXIT_FAILURE);
   }
 #endif
@@ -272,27 +272,28 @@ void init(void){
   ret = ptrace(PTRACE_ATTACH, pid, NULL, NULL);
 
   if(ret != 0){
-    printf("[%s] ATTACH error\n", __func__);
+    printf("[main] ATTACH error\n");
     exit(EXIT_FAILURE);
   }
 #endif
 
 #ifdef LIBVMI_ON
-  ret = vmi_init_complete(&vmi, vmname, VMI_INIT_DOMAINNAME, NULL,
+  printf("start vmi_init_complete\n");
+  ret = vmi_init_complete(&vmi, "u1", VMI_INIT_DOMAINNAME, NULL,
 			  VMI_CONFIG_GLOBAL_FILE_ENTRY, NULL, NULL);
-  
+  printf("finish vmi_init_complete\n");
   if(ret == VMI_FAILURE){
     printf("[init] Failed to init LibVMI library.\n");
     exit(EXIT_FAILURE);
   }
 
   ret = vmi_pause_vm(vmi);
+  printf("finish vmi_pause_vm\n");
   
   if (ret != VMI_SUCCESS) {
     printf("[init] Failed to pause VM\n");
     quit();
   } 
-  
 #endif
 
 }
@@ -963,8 +964,8 @@ obj* prim_printarray(obj* env, obj* list){
     return Nil;
   }
   
-  int arraysize;
-  void* array;
+  int arraysize=0;
+  void* array=NULL;
 
   if(length(list) == 1){
     arraysize = types[tidx].arraysize;
@@ -1112,7 +1113,7 @@ void print_base(long data, int tbit){
     printf("%c", (char)data);
     break;
   default:
-    printf("[%s] not defined\n", __func__);
+    printf("[%s] not defined", __func__);
     return;
   }
   printf(" :: %s", get_typename(tbit));
@@ -1159,7 +1160,7 @@ void print_gvar(obj* o){
     print_enumeration(o->data, types[o->tidx].tbit);
   }
   else{
-    printf("[%s] not defined\n", __func__);
+    printf("[%s] not defined", __func__);
   }
 }
 
@@ -1216,7 +1217,7 @@ void print(obj* o){
 
 int main(int argc, char **argv){  
   if(argc != 2){
-    printf("[%s] argc error\n", __func__);
+    printf("[main] argc error");
     return 0;
   }
 
@@ -1225,7 +1226,8 @@ int main(int argc, char **argv){
 #endif
 
 #ifdef LIBVMI_ON
-  vmname = atoi(argv[1]);
+  vmname = argv[1];
+  printf("%s\n", vmname);
 #endif
 
   symbol_table = Nil;
@@ -1234,6 +1236,7 @@ int main(int argc, char **argv){
   define_gvar(env);
   
   init();
+  printf("finish init\n");
   
   for(;;){
     print(eval(env, read_s()));

@@ -8,6 +8,55 @@
 #include <glib.h>
 GHashTable *gtbl;
 
+//#include <glib-2.0/glib.h>
+
+
+/*
+char* get_typename(int tbit){
+  switch(tbit){
+  case _VOID:
+    return "void";
+  case _INT:
+    return "int";
+  case _CHAR:
+    return "char";
+  case _STRUCT_TASK_STRUCT:
+    return "struct task_struct";
+  case _STRUCT_LIST_HEAD:
+    return "struct list_head";
+  default:
+    return "";
+  }
+}
+
+struct gvarinfo gvars[1] = {
+    {6, "init_task", 0xffffffff81c15500},
+};
+
+struct memberinfo task_struct[3] = {
+    {1, "tasks", 0x290},
+    {3, "pid", 0x304},
+    {5, "comm", 0x4b0},
+};
+
+struct memberinfo list_head[2] = {
+    {2, "next", 0},
+    {2, "prev", 8},
+};
+
+struct typeinfo types[7] = {
+    {base, _VOID, 8},
+    {structure, _STRUCT_LIST_HEAD, 16, .memnum=2, .mem=list_head},
+    {pointer, _STRUCT_LIST_HEAD, 8, .saki=1, .pcount=1},
+    {base, _INT, 4},
+    {base, _CHAR, 1},
+    {array, _CHAR, 16, .saki=4, .arraysize=16},
+    {structure, _STRUCT_TASK_STRUCT, 6784, .memnum=3, .mem=task_struct},
+};
+*/
+
+
+
 #define PTRACE_ON
 //#define LIBVMI_ON
 
@@ -252,7 +301,7 @@ void quit(void){
   int ret = ptrace(PTRACE_DETACH, pid, NULL, NULL);
 
   if(ret != 0){
-    printf("[%s] DETACH error\n", __func__);
+    printf("[main] DETACH error\n");
     exit(EXIT_FAILURE);
   }
 #endif
@@ -272,7 +321,7 @@ void init(void){
   ret = ptrace(PTRACE_ATTACH, pid, NULL, NULL);
 
   if(ret != 0){
-    printf("[%s] ATTACH error\n", __func__);
+    printf("[main] ATTACH error\n");
     exit(EXIT_FAILURE);
   }
 #endif
@@ -1112,7 +1161,7 @@ void print_base(long data, int tbit){
     printf("%c", (char)data);
     break;
   default:
-    printf("[%s] not defined\n", __func__);
+    printf("[%s] not defined", __func__);
     return;
   }
   printf(" :: %s", get_typename(tbit));
@@ -1159,7 +1208,7 @@ void print_gvar(obj* o){
     print_enumeration(o->data, types[o->tidx].tbit);
   }
   else{
-    printf("[%s] not defined\n", __func__);
+    printf("[%s] not defined", __func__);
   }
 }
 
@@ -1216,7 +1265,7 @@ void print(obj* o){
 
 int main(int argc, char **argv){  
   if(argc != 2){
-    printf("[%s] argc error\n", __func__);
+    printf("[main] argc error");
     return 0;
   }
 
