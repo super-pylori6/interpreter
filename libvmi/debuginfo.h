@@ -20,13 +20,15 @@
 #define _STRUCT_PERSON          0x10
 #define _STRUCT_KYUUYO          0x11
 #define _STRUCT_SYAIN_DT        0x12
-#define _FUNCTION               0x0
 #define _STRUCT_CELL            0x13
 #define _DOUBLE                 0x14
 #define _FLOAT                  0x15
 
 #define _STRUCT_TASK_STRUCT     0x16
 #define _STRUCT_LIST_HEAD       0x17
+
+#define _ADDR_T                 0x18
+
 
 struct gvarinfo {
     int tidx;
@@ -68,6 +70,6 @@ char* get_typename(int tbit);
 extern struct gvarinfo gvars[1];
 extern struct memberinfo task_struct[3];
 extern struct memberinfo list_head[2];
-extern struct typeinfo types[7];
+extern struct typeinfo types[8];
 
 #endif

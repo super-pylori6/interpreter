@@ -12,33 +12,40 @@ char* get_typename(int tbit){
     return "struct task_struct";
   case _STRUCT_LIST_HEAD:
     return "struct list_head";
+  case _ADDR_T:
+    return "int";    
   default:
     return "";
   }
 }
 
+
+
+#define GVARS_SIZE 1
+
 struct gvarinfo gvars[1] = {
-    {6, "init_task", 0xffffffff81c17480},
+    {7, "init_task", 0xffffffff81c17480},
 };
 
 struct memberinfo task_struct[3] = {
-    {1, "tasks", 0x270},
-    {3, "pid", 0x2f0},
-    {5, "comm", 0x4c0},
+    {2, "tasks", 0x270},
+    {4, "pid", 0x2f0},
+    {6, "comm", 0x4c0},
 };
 
 struct memberinfo list_head[2] = {
-    {2, "next", 0},
-    {2, "prev", 8},
+    {3, "next", 0},
+    {3, "prev", 8},
 };
 
-struct typeinfo types[7] = {
+struct typeinfo types[8] = {
     {base, _VOID, 8},
+    {base, _ADDR_T, 8},
     {structure, _STRUCT_LIST_HEAD, 16, .memnum=2, .mem=list_head},
-    {pointer, _STRUCT_LIST_HEAD, 8, .saki=1, .pcount=1},
+    {pointer, _STRUCT_LIST_HEAD, 8, .saki=2, .pcount=1},
     {base, _INT, 4},
     {base, _CHAR, 1},
-    {array, _CHAR, 16, .saki=4, .arraysize=16},
+    {array, _CHAR, 16, .saki=5, .arraysize=16},
     {structure, _STRUCT_TASK_STRUCT, 6784, .memnum=3, .mem=task_struct},
 };
 

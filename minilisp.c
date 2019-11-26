@@ -689,14 +689,8 @@ static Obj *eval(void *root, Obj **env, Obj **obj) {
         if (*expanded != *obj)
             return eval(root, env, expanded);
         *fn = (*obj)->car;
-	//print(*fn);
-	//printf("\n");
         *fn = eval(root, env, fn);
-	//print(*fn);
-	//printf("\n");
         *args = (*obj)->cdr;
-	//print(*args);
-	//printf("\n");
         if ((*fn)->type != TPRIMITIVE && (*fn)->type != TFUNCTION)
             error("The head of a list must be a function");
         return apply(root, env, fn, args);
@@ -790,9 +784,6 @@ static Obj *prim_gensym(void *root, Obj **env, Obj **list) {
 // (+ <integer> ...)
 static Obj *prim_plus(void *root, Obj **env, Obj **list) {
     int sum = 0;
-    printf("list: \n");
-    print(*list);
-    printf("\n");
     for (Obj *args = eval_list(root, env, list); args != Nil; args = args->cdr) {
       print(args);
       printf("\n");

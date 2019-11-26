@@ -84,6 +84,7 @@ def getgvarname(line):
 
 def write_infoc():
     info_c = []
+    info_c.append("#include <stdio.h>") 
     info_c.append("#include \"" + WRITEFILE2 +"\"") 
     info_c.append("")
 
@@ -114,6 +115,11 @@ def write_infoc():
     info_c.append(s)
     info_c.append("  }")
     info_c.append("}")
+    info_c.append("")
+
+    info_c.append("char* print_base(int tbit){")
+    
+    info_c.append("#define GVARS_SIZE " + str(len(gvarl_all)))
     info_c.append("")
 
     info_c.append("struct gvarinfo gvars[" + str(len(gvarl_all)) + "] = {")
@@ -265,6 +271,7 @@ def write_infoh():
     info_h.append("    };")
     info_h.append("};")
     info_h.append("")
+    info_h.append("void print_base(long data, int tbit);")
     info_h.append("char* get_typename(int tbit);")
     info_h.append("extern struct gvarinfo gvars[" + str(len(gvarl_all)) + "];")
     for l in structl_all:
