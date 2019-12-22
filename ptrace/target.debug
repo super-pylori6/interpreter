@@ -7,7 +7,7 @@
            producer             (strp) "GNU C11 5.4.0 20160609 -mtune=generic -march=x86-64 -g -fstack-protector-strong"
            language             (data1) C99 (12)
            name                 (strp) "target.c"
-           comp_dir             (strp) "/home/yoshiki/Dropbox/univ/study/master/interpreter"
+           comp_dir             (strp) "/home/asami/Dropbox/univ/study/master/interpreter/ptrace"
            low_pc               (addr) 0x0000000000400566 <add>
            high_pc              (data8) 125 (0x00000000004005e3)
            stmt_list            (sec_offset) 0
@@ -402,7 +402,7 @@
              type                 (ref4) [    90]
              external             (flag_present) はい
              location             (exprloc) 
-              [   0] addr 0x6011d0 <p>
+              [   0] addr 0x6011e8 <p>
  [   359]    variable
              name                 (string) "q"
              decl_file            (data1) 1
@@ -410,22 +410,25 @@
              type                 (ref4) [    90]
              external             (flag_present) はい
              location             (exprloc) 
-              [   0] addr 0x6011d8 <q>
+              [   0] addr 0x6011f0 <q>
  [   36c]    array_type
              type                 (ref4) [    57]
-             sibling              (ref4) [   37c]
+             sibling              (ref4) [   382]
  [   375]      subrange_type
                type                 (ref4) [    65]
-               upper_bound          (data1) 3
- [   37c]    variable
+               upper_bound          (data1) 4
+ [   37b]      subrange_type
+               type                 (ref4) [    65]
+               upper_bound          (data1) 7
+ [   382]    variable
              name                 (string) "ia"
              decl_file            (data1) 1
              decl_line            (data1) 10
              type                 (ref4) [   36c]
              external             (flag_present) はい
              location             (exprloc) 
-              [   0] addr 0x601070 <ia>
- [   390]    variable
+              [   0] addr 0x601200 <ia>
+ [   396]    variable
              name                 (string) "c"
              decl_file            (data1) 1
              decl_line            (data1) 12
@@ -433,37 +436,37 @@
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x400678 <c>
- [   3a3]    array_type
+ [   3a9]    array_type
              type                 (ref4) [    74]
-             sibling              (ref4) [   3b3]
- [   3ac]      subrange_type
+             sibling              (ref4) [   3b9]
+ [   3b2]      subrange_type
                type                 (ref4) [    65]
                upper_bound          (data1) 12
- [   3b3]    variable
+ [   3b9]    variable
              name                 (string) "ca"
              decl_file            (data1) 1
              decl_line            (data1) 13
-             type                 (ref4) [   3a3]
+             type                 (ref4) [   3a9]
              external             (flag_present) はい
              location             (exprloc) 
-              [   0] addr 0x601080 <ca>
- [   3c7]    variable
+              [   0] addr 0x601070 <ca>
+ [   3cd]    variable
              name                 (string) "cp"
              decl_file            (data1) 1
              decl_line            (data1) 14
              type                 (ref4) [    6e]
              external             (flag_present) はい
              location             (exprloc) 
-              [   0] addr 0x601090 <cp>
- [   3db]    variable
+              [   0] addr 0x601080 <cp>
+ [   3e1]    variable
              name                 (string) "q1"
              decl_file            (data1) 1
              decl_line            (data1) 26
              type                 (ref4) [    ab]
              external             (flag_present) はい
              location             (exprloc) 
-              [   0] addr 0x601098 <q1>
- [   3ef]    variable
+              [   0] addr 0x601088 <q1>
+ [   3f5]    variable
              name                 (strp) "tanaka"
              decl_file            (data1) 1
              decl_line            (data1) 47
@@ -471,7 +474,7 @@
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x6010a0 <tanaka>
- [   404]    variable
+ [   40a]    variable
              name                 (string) "ito"
              decl_file            (data1) 1
              decl_line            (data1) 51
@@ -479,7 +482,7 @@
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x6010e0 <ito>
- [   419]    variable
+ [   41f]    variable
              name                 (strp) "tokyo"
              decl_file            (data1) 1
              decl_line            (data1) 73
@@ -487,7 +490,7 @@
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x601120 <tokyo>
- [   42e]    variable
+ [   434]    variable
              name                 (string) "c1"
              decl_file            (data1) 1
              decl_line            (data1) 99
@@ -495,7 +498,7 @@
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x601190 <c1>
- [   442]    variable
+ [   448]    variable
              name                 (string) "c3"
              decl_file            (data1) 1
              decl_line            (data1) 91
@@ -503,7 +506,7 @@
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x6011a0 <c3>
- [   456]    variable
+ [   45c]    variable
              name                 (string) "c2"
              decl_file            (data1) 1
              decl_line            (data1) 95
@@ -511,7 +514,7 @@
              external             (flag_present) はい
              location             (exprloc) 
               [   0] addr 0x6011b0 <c2>
- [   46a]    variable
+ [   470]    variable
              name                 (string) "top"
              decl_file            (data1) 1
              decl_line            (data1) 103

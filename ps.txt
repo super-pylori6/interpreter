@@ -1,0 +1,30 @@
+(defun process-list ()
+
+(define $task init_task)
+(define $offset (- (. $task tasks) $task))
+
+(while 1
+(print (. $task pid) (. $task comm))
+(set $next (deref (. (. $task tasks) next)))
+(set $task (- $next $offset))
+(cast init_task $task)
+(if (= $task init_task) break)
+)
+)
+
+============================
+
+(define $task init_task)
+(print (. $task pid) (. $task comm))
+
+(set $next (deref (. (. $task tasks) next)))
+(define $offset (- (. $task tasks) $task))
+(set $task (- $next $offset))
+(cast init_task $task)
+
+(print (. $task pid) (. $task comm))
+
+
+(set $task (cast init_task (- $next $offset)))
+
+

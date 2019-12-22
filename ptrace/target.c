@@ -7,7 +7,7 @@ int ggg  = 4;
 long hhh = 6;
 int* p   = NULL;
 int* q   = NULL;
-int ia[] = {0, 1, 2, 3};
+int ia[5][8];
 
 const char c = 'x';
 char ca[]    = "hello world!";

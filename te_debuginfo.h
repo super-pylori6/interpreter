@@ -24,11 +24,14 @@
 #define _DOUBLE                 0x14
 #define _FLOAT                  0x15
 
-#define _STRUCT_TASK_STRUCT     0x16
-#define _STRUCT_LIST_HEAD       0x17
+#define _TASK_STRUCT            0x16
+#define _LIST_HEAD              0x17
 
 #define _ADDR_T                 0x18
 
+
+
+#define GVARS_SIZE 1
 
 struct gvarinfo {
     int tidx;
@@ -43,11 +46,11 @@ struct memberinfo {
 };
 
 enum type {
-    base,
-    pointer,
-    array,
-    structure,
-    uni,
+    base_type,
+    pointer_type,
+    array_type,
+    structure_type,
+    union_type,
     enumeration,
 };
 
@@ -66,6 +69,7 @@ struct typeinfo {
     };
 };
 
+void print_base(long data, int tbit);
 char* get_typename(int tbit);
 extern struct gvarinfo gvars[1];
 extern struct memberinfo task_struct[3];
